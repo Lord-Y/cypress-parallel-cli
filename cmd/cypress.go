@@ -16,7 +16,7 @@ func Cypress(c *cli.Context) (z *cli.Command) {
 				Aliases:     []string{"a"},
 				Value:       "http://127.0.0.1:8080",
 				Usage:       "HTTP(s) api url of cypress-parallel-api",
-				Destination: &cmd.Specs,
+				Destination: &cmd.ApiURL,
 			},
 			&cli.StringFlag{
 				Name:        "repository",
@@ -45,14 +45,14 @@ func Cypress(c *cli.Context) (z *cli.Command) {
 				Aliases:     []string{"b"},
 				Value:       "",
 				Usage:       "Branch in which specs are hold (required)",
-				Destination: &cmd.Password,
+				Destination: &cmd.Branch,
 			},
 			&cli.StringFlag{
 				Name:        "specs",
 				Aliases:     []string{"s"},
 				Required:    true,
 				Usage:       "Comma separated list of specs (required)",
-				Destination: &cmd.Repository,
+				Destination: &cmd.Specs,
 			},
 			&cli.StringFlag{
 				Name:        "uniq-id",
