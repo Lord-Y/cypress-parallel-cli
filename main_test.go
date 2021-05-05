@@ -2,13 +2,59 @@ package main
 
 import (
 	"io/ioutil"
+	"os"
+	"os/exec"
+	"os/signal"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	cli "github.com/urfave/cli/v2"
 )
 
-func TestCypress(t *testing.T) {
+func TestMain(t *testing.T) {
+	proc, err := os.FindProcess(os.Getpid())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	sigc := make(chan os.Signal, 1)
+	signal.Notify(sigc, os.Interrupt)
+
+	go func() {
+		<-sigc
+		os.Args = []string{
+			"cypress",
+			"-h",
+		}
+		main()
+		signal.Stop(sigc)
+	}()
+
+	proc.Signal(os.Interrupt)
+	time.Sleep(1 * time.Second)
+}
+
+func TestMain_fail(t *testing.T) {
+	assert := assert.New(t)
+	if os.Getenv("FATAL") == "1" {
+		os.Args = []string{
+			"cypress",
+			"bad",
+		}
+		main()
+		return
+	}
+	cmd := exec.Command(os.Args[0], "cypress", "bad", "-test.run=TestMain_fail")
+	cmd.Env = append(os.Environ(), "FATAL=1")
+	err := cmd.Run()
+	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+		return
+	}
+	assert.Error(err)
+}
+
+func TestMainCypress(t *testing.T) {
 	assert := assert.New(t)
 
 	tests := []struct {

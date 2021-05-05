@@ -1,10 +1,15 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/Lord-Y/cypress-parallel-cli/cmd"
+	"github.com/Lord-Y/cypress-parallel-cli/logger"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	cli "github.com/urfave/cli/v2"
 )
@@ -15,6 +20,17 @@ var (
 )
 
 func init() {
+	logger.SetLoggerLogLevel()
+
+	output := zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true, TimeFormat: time.RFC3339}
+	output.FormatLevel = func(i interface{}) string {
+		return strings.ToUpper(fmt.Sprintf("| %s |", i))
+	}
+	output.FormatMessage = func(i interface{}) string {
+		return fmt.Sprintf("%s", i)
+	}
+	log.Logger = zerolog.New(output).With().Timestamp().Logger()
+
 	cypress = cmd.Cypress(&cli.Context{})
 }
 
@@ -32,6 +48,6 @@ func main() {
 
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err).Msg("Error occured while executing the program")
 	}
 }
