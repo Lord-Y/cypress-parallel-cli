@@ -1,13 +1,24 @@
 package logger
 
 import (
+	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 func SetLoggerLogLevel() {
+	output := zerolog.ConsoleWriter{Out: os.Stdout, NoColor: true, TimeFormat: time.RFC3339}
+	output.FormatLevel = func(i interface{}) string {
+		return strings.ToUpper(fmt.Sprintf("| %s |", i))
+	}
+	output.FormatMessage = func(i interface{}) string {
+		return fmt.Sprintf("%s", i)
+	}
+
 	switch strings.TrimSpace(os.Getenv("CYPRESS_PARALLEL_CLI_LOG_LEVEL")) {
 	case "panic":
 		zerolog.SetGlobalLevel(zerolog.PanicLevel)
@@ -24,4 +35,5 @@ func SetLoggerLogLevel() {
 	default:
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
+	log.Logger = zerolog.New(output).With().Timestamp().Logger()
 }

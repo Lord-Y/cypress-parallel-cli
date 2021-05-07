@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,4 +58,9 @@ func TestSetLoggerLogLevel(t *testing.T) {
 		assert.Equal(tc.expected, z)
 		os.Unsetenv("CYPRESS_PARALLEL_CLI_LOG_LEVEL")
 	}
+}
+
+func TestLogger_info(t *testing.T) {
+	SetLoggerLogLevel()
+	log.Info().Msgf("Testing logger")
 }
