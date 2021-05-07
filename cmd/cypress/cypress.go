@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/Lord-Y/cypress-parallel-cli/git"
+	"github.com/Lord-Y/cypress-parallel-cli/logger"
 	"github.com/rs/zerolog/log"
 )
 
@@ -25,6 +26,10 @@ type Cypress struct {
 	Browser    string // Default browser to use to run unit testing
 	ConfigFile string // Relative path of cypress config if not cypress.json
 	ReportBack bool   // Notify api with cypress results
+}
+
+func init() {
+	logger.SetLoggerLogLevel()
 }
 
 // Run will run cypress command
@@ -48,13 +53,13 @@ func (c *Cypress) Run() {
 
 	err = os.Chdir(gitdir)
 	if err != nil {
-		log.Fatal().Err(err).Msg("Error occured while cloning git repository")
+		log.Fatal().Err(err).Msg("Error occured while chdir git repository")
 		return
 	}
 
 	if c.ConfigFile != "" {
 		var info os.FileInfo
-		if info, err = os.Stat(c.ConfigFile); os.IsNotExist(err) {
+		if info, err = os.Stat(fmt.Sprintf("%s/%s", gitdir, c.ConfigFile)); os.IsNotExist(err) {
 			log.Fatal().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
@@ -146,12 +151,6 @@ func (c *Cypress) Run() {
 			}(v, c.ConfigFile, c.Browser, execErr)
 		}
 		wg.Wait()
-		if len(execErr) > 0 {
-			for i := range execErr {
-				log.Debug().Msgf("Execution error output %s", execErr[i])
-			}
-		} else {
-			log.Info().Msg("Program execution successful")
-		}
+		log.Info().Msg("Program execution successful")
 	}
 }
