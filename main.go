@@ -12,13 +12,15 @@ import (
 
 // make vars public for unit testing
 var (
-	cypress *cli.Command
+	cypress     *cli.Command
+	versionLong *cli.Command
 )
 
 func init() {
 	logger.SetLoggerLogLevel()
 
 	cypress = cmd.Cypress(&cli.Context{})
+	versionLong = cmd.VersionLong(&cli.Context{})
 }
 
 func main() {
@@ -26,11 +28,11 @@ func main() {
 	app.Name = "cypress-parallel-cli"
 	app.Usage = "A cli to start your e2e testing in parallel"
 	app.Description = "cypress-parallel-cli enable user to reduce their e2e testing execution thanks to parallelization"
-	app.Version = "0.0.1"
+	app.Version = cmd.Version
 	app.EnableBashCompletion = true
-
 	app.Commands = []*cli.Command{
 		cypress,
+		versionLong,
 	}
 
 	err := app.Run(os.Args)
