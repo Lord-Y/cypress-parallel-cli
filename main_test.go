@@ -94,6 +94,13 @@ func TestMainCypress(t *testing.T) {
 			},
 			fail: false,
 		},
+		{
+			cliArgs: []string{
+				"cypress-parallel-cli",
+				"version-long",
+			},
+			fail: false,
+		},
 	}
 
 	app := cli.NewApp()
