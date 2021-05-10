@@ -94,10 +94,34 @@ func TestMainCypress(t *testing.T) {
 			},
 			fail: false,
 		},
+	}
+
+	app := cli.NewApp()
+	for _, tc := range tests {
+		app.Writer = ioutil.Discard
+		app.Commands = []*cli.Command{
+			cypress,
+		}
+		err := app.Run(tc.cliArgs)
+		if tc.fail {
+			assert.Error(err)
+		} else {
+			assert.NoError(err)
+		}
+	}
+}
+
+func TestVersionDetails(t *testing.T) {
+	assert := assert.New(t)
+
+	tests := []struct {
+		cliArgs []string
+		fail    bool
+	}{
 		{
 			cliArgs: []string{
 				"cypress-parallel-cli",
-				"version-long",
+				"version-details",
 			},
 			fail: false,
 		},
@@ -107,7 +131,7 @@ func TestMainCypress(t *testing.T) {
 	for _, tc := range tests {
 		app.Writer = ioutil.Discard
 		app.Commands = []*cli.Command{
-			cypress,
+			versionDetails,
 		}
 		err := app.Run(tc.cliArgs)
 		if tc.fail {

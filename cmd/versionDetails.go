@@ -7,11 +7,11 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-// VersionLong command options
-func VersionLong(c *cli.Context) (z *cli.Command) {
+// VersionDetails command options
+func VersionDetails(c *cli.Context) (z *cli.Command) {
 	return &cli.Command{
-		Name:  "version-long",
-		Usage: "print long version of the cli",
+		Name:  "version-details",
+		Usage: "print version details of the cli",
 		Action: func(c *cli.Context) error {
 			fmt.Printf("Version: %s\n", Version)
 			fmt.Printf("Revision: %s\n", revision)
