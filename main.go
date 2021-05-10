@@ -12,15 +12,15 @@ import (
 
 // make vars public for unit testing
 var (
-	cypress     *cli.Command
-	versionLong *cli.Command
+	cypress        *cli.Command
+	versionDetails *cli.Command
 )
 
 func init() {
 	logger.SetLoggerLogLevel()
 
 	cypress = cmd.Cypress(&cli.Context{})
-	versionLong = cmd.VersionLong(&cli.Context{})
+	versionDetails = cmd.VersionDetails(&cli.Context{})
 }
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 	app.EnableBashCompletion = true
 	app.Commands = []*cli.Command{
 		cypress,
-		versionLong,
+		versionDetails,
 	}
 
 	err := app.Run(os.Args)
