@@ -78,7 +78,7 @@ func Cypress(c *cli.Context) (z *cli.Command) {
 			&cli.BoolFlag{
 				Name:        "report-back",
 				Aliases:     []string{"rp"},
-				Usage:       "Notify api with cypress results",
+				Usage:       "Send result to api",
 				Destination: &cmd.ReportBack,
 			},
 		},

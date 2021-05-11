@@ -2,7 +2,11 @@
 package cypress
 
 import (
+	"bytes"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,9 +14,12 @@ import (
 	"sync"
 
 	"github.com/Lord-Y/cypress-parallel-cli/git"
+	"github.com/Lord-Y/cypress-parallel-cli/httprequests"
 	"github.com/Lord-Y/cypress-parallel-cli/logger"
 	"github.com/rs/zerolog/log"
 )
+
+var apiURI = "/api/v1/cypress-parallel-api/executions/update"
 
 // Cypress requirements to run cypress command
 type Cypress struct {
@@ -45,6 +52,7 @@ func (c *Cypress) Run() {
 
 	gitdir, err := gc.Clone()
 	if err != nil {
+		c.reportBack(err)
 		log.Fatal().Err(err).Msg("Error occured while cloning git repository")
 		return
 	}
@@ -53,6 +61,7 @@ func (c *Cypress) Run() {
 
 	err = os.Chdir(gitdir)
 	if err != nil {
+		c.reportBack(err)
 		log.Fatal().Err(err).Msg("Error occured while chdir git repository")
 		return
 	}
@@ -60,10 +69,12 @@ func (c *Cypress) Run() {
 	if c.ConfigFile != "" {
 		var info os.FileInfo
 		if info, err = os.Stat(fmt.Sprintf("%s/%s", gitdir, c.ConfigFile)); os.IsNotExist(err) {
+			c.reportBack(err)
 			log.Fatal().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
 		if !info.Mode().IsRegular() {
+			c.reportBack(err)
 			log.Fatal().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
@@ -81,6 +92,7 @@ func (c *Cypress) Run() {
 	)
 
 	if err := execUninstallCmd.Run(); err != nil {
+		c.reportBack(err)
 		log.Fatal().Err(err).Msg("Error occured while forcing uninstall of local cypress package")
 		return
 	}
@@ -92,6 +104,7 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("NPM install output %s", string(output))
 
 	if err != nil {
+		c.reportBack(err)
 		log.Fatal().Err(err).Msgf("Error occured while installing user packages")
 		return
 	}
@@ -105,52 +118,106 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("Mochawesome install output %s", string(output))
 
 	if err != nil {
+		c.reportBack(err)
 		log.Fatal().Err(err).Msgf("Error occured while installing mochawesome")
 		return
 	}
 
 	specs := strings.Split(c.Specs, ",")
-	if len(specs) > 0 {
-		var execErr []string
-		wg := sync.WaitGroup{}
-		wg.Add(len(specs))
-		for _, v := range specs {
-			go func(s string, c string, b string, execErr []string) {
-				f := filepath.Base(s)
-				args := []string{
-					"run",
-					"--browser",
-					b,
-					"--headless",
-					"--spec",
-					s,
-					"--reporter",
-					"mochawesome",
-					"--reporter-options",
-					fmt.Sprintf("reportFilename=%s", f),
-				}
-				log.Debug().Msgf("Running cypress command %s %s", "/usr/bin/cypress", strings.Join(args, " "))
-				output, err := exec.Command(
-					"/usr/bin/cypress",
-					"run",
-					"--browser",
-					b,
-					"--headless",
-					"--spec",
-					s,
-					"--reporter",
-					"mochawesome",
-					"--reporter-options",
-					fmt.Sprintf("reportFilename=%s", f),
-				).Output()
-				log.Debug().Msgf("Execution output %s", string(output))
+	wg := sync.WaitGroup{}
+	wg.Add(len(specs))
+	for _, spec := range specs {
+		go func(spec string, c *Cypress) {
+			f := filepath.Base(spec)
+			args := []string{
+				"run",
+				"--browser",
+				c.Browser,
+				"--headless",
+				"--spec",
+				spec,
+				"--reporter",
+				"mochawesome",
+				"--reporter-options",
+				fmt.Sprintf("reportFilename=%s", f),
+			}
+			log.Debug().Msgf("Running cypress command %s %s", "/usr/bin/cypress", strings.Join(args, " "))
+			output, err := exec.Command(
+				"/usr/bin/cypress",
+				"run",
+				"--browser",
+				c.Browser,
+				"--headless",
+				"--spec",
+				spec,
+				"--reporter",
+				"mochawesome",
+				"--reporter-options",
+				fmt.Sprintf("reportFilename=%s", f),
+			).Output()
+			log.Debug().Msgf("Execution output %s", string(output))
+			if err != nil {
+				c.reportBack(err)
+
+			}
+			if c.ReportBack {
+				log.Debug().Msgf("Reporting back result to %s", fmt.Sprintf("%s%s", c.ApiURL, apiURI))
+				result := fmt.Sprintf("mochawesome-report/%s.json", strings.TrimSuffix(f, ".js"))
+				of, err := os.Open(result)
 				if err != nil {
-					execErr = append(execErr, err.Error())
+					log.Error().Err(err).Msgf("Fail to open file %s", result)
 				}
-				wg.Done()
-			}(v, c.ConfigFile, c.Browser, execErr)
+				defer of.Close()
+				fo, err := ioutil.ReadAll(of)
+				if err != nil {
+					log.Error().Err(err).Msgf("Fail to read file %s content", result)
+				}
+				headers := make(map[string]string)
+				headers["Content-Type"] = "application/x-www-form-urlencoded"
+				buf := new(bytes.Buffer)
+				if err := json.Compact(buf, fo); err != nil {
+					log.Error().Err(err).Msg("Fail to compact json result")
+					return
+				}
+
+				payload := fmt.Sprintf("result=%s", hex.EncodeToString(buf.Bytes()))
+				payload += "&executionStatus=DONE"
+				payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
+				payload += fmt.Sprintf("&branch=%s", c.Branch)
+				payload += fmt.Sprintf("&spec=%s", spec)
+				payload += fmt.Sprintf("&encoded=%s", "true")
+
+				_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload, "")
+				if err != nil {
+					log.Error().Err(err).Msg("Fail to report back result")
+				}
+			}
+			wg.Done()
+		}(spec, c)
+	}
+	wg.Wait()
+	log.Info().Msg("Program execution successful")
+}
+
+func (c *Cypress) reportBack(err error) {
+	if c.ReportBack {
+		headers := make(map[string]string)
+		headers["Content-Type"] = "application/x-www-form-urlencoded"
+
+		specs := strings.Split(c.Specs, ",")
+		for _, spec := range specs {
+			payload := fmt.Sprintf("result=%s", "{}")
+			payload += "&executionStatus=FAILED"
+			payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
+			payload += fmt.Sprintf("&branch=%s", c.Branch)
+			payload += fmt.Sprintf("&spec=%s", spec)
+			payload += fmt.Sprintf("&executionErrorOutput=%s", err.Error())
+
+			_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload, "")
+			if err != nil {
+				log.Error().Err(err).Msg("Fail to report back result")
+				return
+			}
 		}
-		wg.Wait()
-		log.Info().Msg("Program execution successful")
 	}
 }
