@@ -1,0 +1,54 @@
+---
+version: 2.1
+
+jobs:
+  build:
+    docker:
+    - image: circleci/golang:1.16
+
+    steps:
+    # pull sources
+    - checkout
+
+    - restore_cache:
+        keys:
+        - cypress-parallel-cli-{{ checksum "go.mod" }}
+    
+    - run:
+        name: download mage
+        command: go get -u github.com/magefile/mage
+
+    - run:
+        name: Install golang dependencies
+        command: mage installDeps
+    
+    - save_cache:
+        key: cypress-parallel-cli-{{ checksum "go.mod" }}
+        paths:
+        - /go/pkg/mod
+
+    - run:
+        name: Perform unit testing
+        command: go test -v ./... -coverprofile=coverage.out
+
+    - run:
+        name: Print result of unit testing
+        command: go tool cover -func=coverage.out
+
+    - run:
+        name: Generate binaries
+        command: mage build
+    
+    - run:
+        name: Compress binaries
+        command: mage compress
+
+    - run:
+        name: Cleaning binaries
+        command: mage clean
+
+workflows:
+  version: 2
+  test-and-build:
+    jobs:
+    - build
