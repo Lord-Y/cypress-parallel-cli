@@ -3,6 +3,9 @@
 package main
 
 import (
+	"archive/tar"
+	"compress/gzip"
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,6 +19,8 @@ import (
 var (
 	packageName  = "github.com/Lord-Y/cypress-parallel-cli"
 	app          = "cypress-parallel-cli"
+	artifacts    = "artifacts"
+	sha          = "sha256sums.txt"
 	architecture = map[string]string{
 		"linux":   "amd64",
 		"darwin":  "amd64",
@@ -96,8 +101,78 @@ func Clean() {
 			}
 			fmt.Printf("Cleaning %s ...\n", appName)
 			os.Remove(appName)
+			os.RemoveAll(artifacts)
 			wg.Done()
 		}(oses, arch)
 	}
 	wg.Wait()
+}
+
+// Compress Compress will gzip all binaries and generate checksum file
+func Compress() (err error) {
+	var (
+		f, fsha *os.File
+		writer  *gzip.Writer
+		body    []byte
+		appName string
+	)
+	_ = os.RemoveAll(artifacts)
+	err = os.MkdirAll("artifacts", 0755)
+	if err != nil {
+		return err
+	}
+
+	for oses, arch := range architecture {
+		if oses == "windows" {
+			appName = fmt.Sprintf("%s_%s_%s.exe", app, oses, arch)
+		} else {
+			appName = fmt.Sprintf("%s_%s_%s", app, oses, arch)
+		}
+
+		f, err = os.OpenFile(fmt.Sprintf("%s/%s.tar.gz", artifacts, appName), os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+
+		writer, err = gzip.NewWriterLevel(f, gzip.BestCompression)
+		if err != nil {
+			return err
+		}
+		defer writer.Close()
+
+		tf := tar.NewWriter(writer)
+		defer tf.Close()
+
+		body, err = os.ReadFile(appName)
+		if err != nil {
+			return err
+		}
+
+		if body != nil {
+			header := &tar.Header{
+				Name: appName,
+				Mode: int64(0644),
+				Size: int64(len(body)),
+			}
+			err = tf.WriteHeader(header)
+			if err != nil {
+				return err
+			}
+			_, err := tf.Write(body)
+			if err != nil {
+				return err
+			}
+		}
+
+		fsha, err = os.OpenFile(fmt.Sprintf("%s/%s", artifacts, sha), os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			return err
+		}
+		defer fsha.Close()
+
+		sum := sha256.Sum256(body)
+		fsha.WriteString(fmt.Sprintf("%x\t%s\n", sum, appName))
+	}
+	return
 }

@@ -33,3 +33,4 @@ _testmain.go
 **/*.out
 **/node_modules
 cypress-parallel-cli*
+artifacts
