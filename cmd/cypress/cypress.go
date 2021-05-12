@@ -127,7 +127,7 @@ func (c *Cypress) Run() {
 	wg := sync.WaitGroup{}
 	wg.Add(len(specs))
 	for _, spec := range specs {
-		go func(spec string, c *Cypress) {
+		go func(gitdir, spec string, c *Cypress) {
 			f := filepath.Base(spec)
 			args := []string{
 				"run",
@@ -162,21 +162,26 @@ func (c *Cypress) Run() {
 			}
 			if c.ReportBack {
 				log.Debug().Msgf("Reporting back result to %s", fmt.Sprintf("%s%s", c.ApiURL, apiURI))
-				result := fmt.Sprintf("mochawesome-report/%s.json", strings.TrimSuffix(f, ".js"))
+				result := fmt.Sprintf("%s/mochawesome-report/%s.json", gitdir, strings.TrimSuffix(f, ".js"))
 				of, err := os.Open(result)
 				if err != nil {
 					log.Error().Err(err).Msgf("Fail to open file %s", result)
+					c.reportBack(err)
+					return
 				}
 				defer of.Close()
 				fo, err := io.ReadAll(of)
 				if err != nil {
 					log.Error().Err(err).Msgf("Fail to read file %s content", result)
+					c.reportBack(err)
+					return
 				}
 				headers := make(map[string]string)
 				headers["Content-Type"] = "application/x-www-form-urlencoded"
 				buf := new(bytes.Buffer)
 				if err := json.Compact(buf, fo); err != nil {
 					log.Error().Err(err).Msg("Fail to compact json result")
+					c.reportBack(err)
 					return
 				}
 
@@ -193,7 +198,7 @@ func (c *Cypress) Run() {
 				}
 			}
 			wg.Done()
-		}(spec, c)
+		}(gitdir, spec, c)
 	}
 	wg.Wait()
 	log.Info().Msg("Program execution successful")
