@@ -7,6 +7,11 @@ jobs:
     - image: circleci/golang:1.16
       environment:
         CYPRESS_VERSION: 7.2.0
+        CACHE_VERSION: 1
+        CHROME_VERSION: 89.0.4389.72
+        FIREFOX_VERSION: 86.0.1
+        DBUS_SESSION_BUS_ADDRESS: /dev/null
+        CYPRESS_PARALLEL_CLI_LOG_LEVEL: debug
 
     steps:
     # pull sources
@@ -17,16 +22,32 @@ jobs:
         - cypress-parallel-cli-{{ checksum "go.mod" }}
 
     - run:
-        name: Install nodejs and cypress
+        name: Install requirements
         command: |
           export DEBIAN_FRONTEND="noninteractive"
-          which node || curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-          which node || sudo apt update
-          which node || sudo apt-get install -y nodejs
+          sudo apt-get install -y mplayer fonts-liberation libappindicator3-1 xdg-utils
+          which google-chrome &> /dev/null || wget -O /tmp/google-chrome-stable_current_amd64.deb "http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}-1_amd64.deb" && \
+          sudo dpkg -i /tmp/google-chrome-stable_current_amd64.deb ; \
+          sudo apt-get install -f -y && \
+          rm -f /tmp/google-chrome-stable_current_amd64.deb
+
+          which firefox &> /dev/null || wget --no-verbose -O /tmp/firefox.tar.bz2 https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION/linux-x86_64/en-US/firefox-$FIREFOX_VERSION.tar.bz2 \
+          && sudo tar -C /opt -xjf /tmp/firefox.tar.bz2 \
+          && rm /tmp/firefox.tar.bz2 \
+          && sudo ln -fs /opt/firefox/firefox /usr/bin/firefox
+
+          which node &> /dev/null || curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+          which node &> /dev/null || sudo apt update
+          which node &> /dev/null || sudo apt-get install -y nodejs
 
           # https://docs.cypress.io/guides/continuous-integration/introduction#Dependencies
           which cypress &> /dev/null || sudo apt-get install -y libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
-          which cypress &> /dev/null || sudo npm install -g cypress@${CYPRESS_VERSION} --unsafe-perm
+
+          # https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally
+          which cypress &> /dev/null || mkdir -p ~/.npm-global
+          which cypress &> /dev/null || npm config set prefix '~/.npm-global'
+          which cypress &> /dev/null || export PATH=~/.npm-global/bin:$PATH
+          which cypress &> /dev/null || npm install -g cypress@${CYPRESS_VERSION} --unsafe-perm
 
     - run:
         name: download mage
@@ -40,7 +61,7 @@ jobs:
         key: cypress-parallel-cli-{{ checksum "go.mod" }}
         paths:
         - /go/pkg/mod
-        - ~/.npm-global/
+        - /home/circleci/.npm-global
 
     - run:
         name: Perform unit testing
