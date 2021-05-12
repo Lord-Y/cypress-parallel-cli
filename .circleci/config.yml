@@ -19,11 +19,11 @@ jobs:
     - run:
         name: Install nodejs and cypress
         command: |
+          export DEBIAN_FRONTEND="noninteractive"
           which node || curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
           which node || sudo apt update
           which node || sudo apt-get install -y nodejs
 
-          which cypress &> /dev/null || sudo apt install libgconf-2-4 libatk1.0-0 libatk-bridge2.0-0 libgdk-pixbuf2.0-0 libgtk-3-0 libgbm-dev libnss3-dev libxss-dev libasound2
           which cypress &> /dev/null || npm install -g cypress@${CYPRESS_VERSION} --unsafe-perm --silent
           cypress verify
     
