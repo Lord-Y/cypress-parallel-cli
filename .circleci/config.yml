@@ -12,9 +12,9 @@ jobs:
     # pull sources
     - checkout
 
-    # - restore_cache:
-    #     keys:
-    #     - cypress-parallel-cli-{{ checksum "go.mod" }}
+    - restore_cache:
+        keys:
+        - cypress-parallel-cli-{{ checksum "go.mod" }}
 
     - run:
         name: Install nodejs and cypress
@@ -26,9 +26,8 @@ jobs:
 
           # https://docs.cypress.io/guides/continuous-integration/introduction#Dependencies
           which cypress &> /dev/null || sudo apt-get install -y libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
-          which cypress &> /dev/null || npm install -g cypress@${CYPRESS_VERSION} --unsafe-perm --silent
-          cypress verify
-    
+          which cypress &> /dev/null || sudo npm install -g cypress@${CYPRESS_VERSION} --unsafe-perm
+
     - run:
         name: download mage
         command: go get -u github.com/magefile/mage
@@ -37,11 +36,11 @@ jobs:
         name: Install golang dependencies
         command: mage installDeps
     
-    # - save_cache:
-    #     key: cypress-parallel-cli-{{ checksum "go.mod" }}
-    #     paths:
-    #     - /go/pkg/mod
-    #     - ~/.npm-global/
+    - save_cache:
+        key: cypress-parallel-cli-{{ checksum "go.mod" }}
+        paths:
+        - /go/pkg/mod
+        - ~/.npm-global/
 
     - run:
         name: Perform unit testing
