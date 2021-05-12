@@ -19,7 +19,6 @@ jobs:
     - run:
         name: Install nodejs and cypress
         command: |
-          export DEBIAN_FRONTEND="noninteractive"
           which node || curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
           which node || sudo apt update
           which node || sudo apt-get install -y nodejs
