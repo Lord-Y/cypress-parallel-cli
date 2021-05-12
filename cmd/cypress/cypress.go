@@ -128,6 +128,7 @@ func (c *Cypress) Run() {
 	wg.Add(len(specs))
 	for _, spec := range specs {
 		go func(gitdir, spec string, c *Cypress) {
+			log.Debug().Msgf("cypress struct %+v", c)
 			f := filepath.Base(spec)
 			args := []string{
 				"run",
@@ -141,9 +142,9 @@ func (c *Cypress) Run() {
 				"--reporter-options",
 				fmt.Sprintf("reportFilename=%s", f),
 			}
-			log.Debug().Msgf("Running cypress command %s %s", "/usr/bin/cypress", strings.Join(args, " "))
+			log.Debug().Msgf("Running cypress command %s %s", "cypress", strings.Join(args, " "))
 			output, err := exec.Command(
-				"/usr/bin/cypress",
+				"cypress",
 				"run",
 				"--browser",
 				c.Browser,
