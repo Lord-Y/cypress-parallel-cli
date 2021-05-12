@@ -5,6 +5,8 @@ jobs:
   build:
     docker:
     - image: circleci/golang:1.16
+      environment:
+        CYPRESS_VERSION: 7.2.0
 
     steps:
     # pull sources
@@ -24,7 +26,7 @@ jobs:
           mkdir ~/.npm-global
           npm config set prefix '~/.npm-global'
           export PATH=~/.npm-global/bin:$PATH
-          npm install -g cypress@7.2.0
+          npm install -g cypress@${CYPRESS_VERSION}
     
     - run:
         name: download mage
