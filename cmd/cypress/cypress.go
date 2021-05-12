@@ -141,9 +141,9 @@ func (c *Cypress) Run() {
 				"--reporter-options",
 				fmt.Sprintf("reportFilename=%s", f),
 			}
-			log.Debug().Msgf("Running cypress command %s %s", "/usr/bin/cypress", strings.Join(args, " "))
+			log.Debug().Msgf("Running cypress command %s %s", "cypress", strings.Join(args, " "))
 			output, err := exec.Command(
-				"/usr/bin/cypress",
+				"cypress",
 				"run",
 				"--browser",
 				c.Browser,
