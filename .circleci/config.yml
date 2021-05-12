@@ -38,7 +38,7 @@ jobs:
     - run:
         name: Generate binaries
         command: mage build
-    
+
     - run:
         name: Compress binaries
         command: mage compress
