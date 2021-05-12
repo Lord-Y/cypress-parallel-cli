@@ -43,6 +43,7 @@ jobs:
 
     - run:
         name: Perform unit testing
+        no_output_timeout: 30m
         command: go test -v ./... -coverprofile=coverage.out
 
     - run:
