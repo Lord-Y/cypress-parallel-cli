@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -168,7 +168,7 @@ func (c *Cypress) Run() {
 					log.Error().Err(err).Msgf("Fail to open file %s", result)
 				}
 				defer of.Close()
-				fo, err := ioutil.ReadAll(of)
+				fo, err := io.ReadAll(of)
 				if err != nil {
 					log.Error().Err(err).Msgf("Fail to read file %s content", result)
 				}
