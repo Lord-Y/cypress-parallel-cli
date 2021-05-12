@@ -32,4 +32,4 @@ _testmain.go
 /src/go.sum
 **/*.out
 **/node_modules
-cypress-parallel-cli
+cypress-parallel-cli*
