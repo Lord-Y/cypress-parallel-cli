@@ -43,7 +43,12 @@ func Build() (err error) {
 	wg.Add(len(architecture))
 	for oses, arch := range architecture {
 		go func(oses, arch string) (err error) {
-			appName := fmt.Sprintf("%s_%s_%s", app, oses, arch)
+			var appName string
+			if oses == "windows" {
+				appName = fmt.Sprintf("%s_%s_%s.exe", app, oses, arch)
+			} else {
+				appName = fmt.Sprintf("%s_%s_%s", app, oses, arch)
+			}
 			os.Remove(appName)
 			fmt.Printf("Building %s ...\n", appName)
 			cmd := exec.Command(
@@ -55,7 +60,6 @@ func Build() (err error) {
 				appName,
 				".",
 			)
-			fmt.Printf("command %s\n", cmd.String())
 			cmd.Env = append(
 				os.Environ(),
 				fmt.Sprintf("GOOS=%s", oses),
@@ -84,7 +88,12 @@ func Clean() {
 	wg.Add(len(architecture))
 	for oses, arch := range architecture {
 		go func(oses, arch string) {
-			appName := fmt.Sprintf("%s_%s_%s", app, oses, arch)
+			var appName string
+			if oses == "windows" {
+				appName = fmt.Sprintf("%s_%s_%s.exe", app, oses, arch)
+			} else {
+				appName = fmt.Sprintf("%s_%s_%s", app, oses, arch)
+			}
 			fmt.Printf("Cleaning %s ...\n", appName)
 			os.Remove(appName)
 			wg.Done()
