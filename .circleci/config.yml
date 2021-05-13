@@ -65,7 +65,7 @@ jobs:
     - run:
         name: Perform unit testing
         no_output_timeout: 30m
-        command: go test -v ./... -coverprofile=coverage.out -p 1
+        command: go test -v ./... -coverprofile=coverage.out
 
     - run:
         name: Print result of unit testing
