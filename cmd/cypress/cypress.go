@@ -127,7 +127,8 @@ func (c *Cypress) Run() {
 	wg := sync.WaitGroup{}
 	wg.Add(len(specs))
 	for _, spec := range specs {
-		go func(gitdir, spec string, c *Cypress) {
+		go func(gitdir, spec string, c *Cypress, wg *sync.WaitGroup) {
+			defer wg.Done()
 			f := filepath.Base(spec)
 			args := []string{
 				"run",
@@ -197,8 +198,7 @@ func (c *Cypress) Run() {
 					log.Error().Err(err).Msg("Fail to report back result")
 				}
 			}
-			wg.Done()
-		}(gitdir, spec, c)
+		}(gitdir, spec, c, &wg)
 	}
 	wg.Wait()
 	log.Info().Msg("Program execution successful")
