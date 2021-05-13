@@ -12,14 +12,15 @@ jobs:
         FIREFOX_VERSION: 86.0.1
         DBUS_SESSION_BUS_ADDRESS: /dev/null
         CYPRESS_PARALLEL_CLI_LOG_LEVEL: debug
+    resource_class: large
 
     steps:
     # pull sources
     - checkout
 
-    - restore_cache:
-        keys:
-        - cypress-parallel-cli-{{ checksum "go.mod" }}
+    # - restore_cache:
+    #     keys:
+    #     - cypress-parallel-cli-{{ checksum "go.mod" }}
 
     - run:
         name: Install requirements
@@ -37,7 +38,6 @@ jobs:
           && sudo ln -fs /opt/firefox/firefox /usr/bin/firefox
 
           which node &> /dev/null || curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-          which node &> /dev/null || sudo apt update
           which node &> /dev/null || sudo apt-get install -y nodejs
 
           # https://docs.cypress.io/guides/continuous-integration/introduction#Dependencies
@@ -57,11 +57,11 @@ jobs:
         name: Install golang dependencies
         command: mage installDeps
     
-    - save_cache:
-        key: cypress-parallel-cli-{{ checksum "go.mod" }}
-        paths:
-        - /go/pkg/mod
-        - /home/circleci/.npm-global
+    # - save_cache:
+    #     key: cypress-parallel-cli-{{ checksum "go.mod" }}
+    #     paths:
+    #     - /go/pkg/mod
+    #     - /home/circleci/.npm-global
 
     - run:
         name: Perform unit testing
