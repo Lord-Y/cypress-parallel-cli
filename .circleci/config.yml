@@ -17,9 +17,9 @@ jobs:
     # pull sources
     - checkout
 
-    # - restore_cache:
-    #     keys:
-    #     - cypress-parallel-cli-{{ checksum "go.mod" }}
+    - restore_cache:
+        keys:
+        - cypress-parallel-cli-{{ checksum "go.mod" }}
 
     - run:
         name: Install requirements
@@ -56,11 +56,11 @@ jobs:
         name: Install golang dependencies
         command: mage installDeps
     
-    # - save_cache:
-    #     key: cypress-parallel-cli-{{ checksum "go.mod" }}
-    #     paths:
-    #     - /go/pkg/mod
-    #     - /home/circleci/.npm-global
+    - save_cache:
+        key: cypress-parallel-cli-{{ checksum "go.mod" }}
+        paths:
+        - /go/pkg/mod
+        - /home/circleci/.npm-global
 
     - run:
         name: Perform unit testing
