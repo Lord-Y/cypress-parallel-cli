@@ -12,7 +12,6 @@ jobs:
         FIREFOX_VERSION: 86.0.1
         DBUS_SESSION_BUS_ADDRESS: /dev/null
         CYPRESS_PARALLEL_CLI_LOG_LEVEL: debug
-    resource_class: large
 
     steps:
     # pull sources
@@ -66,7 +65,7 @@ jobs:
     - run:
         name: Perform unit testing
         no_output_timeout: 30m
-        command: go test -v ./... -coverprofile=coverage.out
+        command: go test -v ./... -coverprofile=coverage.out -timeout 30m
 
     - run:
         name: Print result of unit testing
