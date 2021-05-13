@@ -128,7 +128,6 @@ func (c *Cypress) Run() {
 	wg.Add(len(specs))
 	for _, spec := range specs {
 		go func(gitdir, spec string, c *Cypress) {
-			log.Debug().Msgf("cypress struct %+v", c)
 			f := filepath.Base(spec)
 			args := []string{
 				"run",
