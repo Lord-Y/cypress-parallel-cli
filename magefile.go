@@ -71,7 +71,13 @@ func Build() (err error) {
 				fmt.Sprintf("GOOS=%s", oses),
 				fmt.Sprintf("GOARCH=%s", arch),
 			)
-			return cmd.Run()
+			fmt.Printf("gomodule %s\n", os.Getenv("GO111MODULE"))
+			fmt.Printf("cmd %s\n", cmd.String())
+			err = cmd.Run()
+			if err != nil {
+				fmt.Printf("error %s\n", err.Error())
+			}
+			return
 		}(oses, arch, &wg)
 	}
 	wg.Wait()
