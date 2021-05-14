@@ -23,7 +23,7 @@ jobs:
 
     - restore_cache:
         keys:
-        - cypress-parallel-cli-{{ checksum "go.mod" }}-1-1
+        - cypress-parallel-cli-{{ checksum "go.mod" }}-1
 
     - run:
         name: Install requirements
