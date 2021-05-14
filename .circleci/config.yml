@@ -13,7 +13,6 @@ jobs:
     executor: golang
     environment:
       CYPRESS_VERSION: 7.2.0
-      CACHE_VERSION: 2
       CHROME_VERSION: 89.0.4389.72
       FIREFOX_VERSION: 86.0.1
       DBUS_SESSION_BUS_ADDRESS: /dev/null
@@ -24,7 +23,7 @@ jobs:
 
     - restore_cache:
         keys:
-        - cypress-parallel-cli-{{ checksum "go.mod" }}
+        - cypress-parallel-cli-{{ checksum "go.mod" }}-1-1
 
     - run:
         name: Install requirements
@@ -59,7 +58,7 @@ jobs:
         command: mage installDeps
     
     - save_cache:
-        key: cypress-parallel-cli-{{ checksum "go.mod" }}
+        key: cypress-parallel-cli-{{ checksum "go.mod" }}-1
         paths:
         - /go/pkg/mod
         - /home/circleci/.npm-global
@@ -97,7 +96,7 @@ jobs:
 
     - restore_cache:
         keys:
-        - cypress-parallel-cli-{{ checksum "go.mod" }}
+        - cypress-parallel-cli-{{ checksum "go.mod" }}-1
 
     - run:
         name: Generate binaries
@@ -129,7 +128,7 @@ jobs:
 
     - restore_cache:
         keys:
-        - cypress-parallel-cli-{{ checksum "go.mod" }}
+        - cypress-parallel-cli-{{ checksum "go.mod" }}-1
 
     - run:
         name: Generate binaries
