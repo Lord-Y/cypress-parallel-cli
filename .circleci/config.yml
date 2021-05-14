@@ -100,6 +100,10 @@ jobs:
         - cypress-parallel-cli-{{ checksum "go.mod" }}-1
 
     - run:
+        name: download mage
+        command: go get -u github.com/magefile/mage
+
+    - run:
         name: Generate binaries
         command: mage build
 
@@ -130,6 +134,10 @@ jobs:
     - restore_cache:
         keys:
         - cypress-parallel-cli-{{ checksum "go.mod" }}-1
+
+    - run:
+        name: download mage
+        command: go get -u github.com/magefile/mage
 
     - run:
         name: Generate binaries
