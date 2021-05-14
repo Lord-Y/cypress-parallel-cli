@@ -87,9 +87,6 @@ jobs:
 
   build-tags-and-publish-prerelease:
     executor: golang
-    environment:
-      BUILD_VERSION: "v${CIRCLE_TAG}"
-      BUILD_REVISION: $(git rev-list -1 HEAD)
 
     steps:
     # pull sources
@@ -109,7 +106,10 @@ jobs:
 
     - run:
         name: Generate binaries
-        command: mage build
+        command: |
+          export BUILD_VERSION=${CIRCLE_TAG}
+          export BUILD_REVISION=$(git rev-list -1 HEAD)
+          mage build
 
     - run:
         name: Compress binaries
@@ -120,7 +120,7 @@ jobs:
         command: |
           go get github.com/tcnksm/ghr
           git checkout .
-          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${BUILD_VERSION} -prerelease ${BUILD_VERSION} artifacts/
+          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -prerelease ${CIRCLE_TAG} artifacts/
 
     - run:
         name: Cleaning binaries
@@ -128,9 +128,6 @@ jobs:
 
   build-tags-and-publish-release:
     executor: golang
-    environment:
-      BUILD_VERSION: "v${CIRCLE_TAG}"
-      BUILD_REVISION: $(git rev-list -1 HEAD)
 
     steps:
     # pull sources
@@ -150,7 +147,10 @@ jobs:
 
     - run:
         name: Generate binaries
-        command: mage build
+        command: |
+          export BUILD_VERSION=${CIRCLE_TAG}
+          export BUILD_REVISION=$(git rev-list -1 HEAD)
+          mage build
 
     - run:
         name: Compress binaries
@@ -161,7 +161,7 @@ jobs:
         command: |
           go get github.com/tcnksm/ghr
           git checkout .
-          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${BUILD_VERSION} ${BUILD_VERSION} artifacts/
+          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} ${CIRCLE_TAG} artifacts/
 
     - run:
         name: Cleaning binaries
@@ -177,6 +177,7 @@ workflows:
           tags:
             only: /.*/
     - build-tags-and-publish-prerelease:
+        context: GITHUB
         requires:
         - build
         filters:
@@ -185,6 +186,7 @@ workflows:
           branches:
             ignore: /.*/
     - build-tags-and-publish-release:
+        context: GITHUB
         requires:
         - build
         filters:
