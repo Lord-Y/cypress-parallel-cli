@@ -110,7 +110,7 @@ jobs:
           export BUILD_VERSION=${CIRCLE_TAG}
           export BUILD_REVISION=$(git rev-list -1 HEAD)
           mage build
-          chmod +x artifacts/*
+          chmod +x ${CIRCLE_PROJECT_REPONAME}_*
 
     - run:
         name: Compress binaries
@@ -152,7 +152,7 @@ jobs:
           export BUILD_VERSION=${CIRCLE_TAG}
           export BUILD_REVISION=$(git rev-list -1 HEAD)
           mage build
-          chmod +x artifacts/*
+          chmod +x ${CIRCLE_PROJECT_REPONAME}_*
 
     - run:
         name: Compress binaries
