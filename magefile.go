@@ -29,7 +29,7 @@ var (
 )
 
 var ldflags = fmt.Sprintf(
-	"-X %s/cmd.Version=%s -X %s/cmd.revision=%s -X '%s/cmd.buildDate=%s' -X '%s/cmd.goVersion=%s'",
+	"-X %s/cmd.Version=%s -X %s/cmd.revision=%s -X %s/cmd.buildDate=%s -X %s/cmd.goVersion=%s",
 	packageName,
 	os.Getenv("BUILD_VERSION"),
 	packageName,
@@ -61,7 +61,7 @@ func Build() (err error) {
 				"go",
 				"build",
 				"-ldflags",
-				ldflags,
+				fmt.Sprintf(`"%s"`, ldflags),
 				"-o",
 				appName,
 				".",
@@ -71,13 +71,7 @@ func Build() (err error) {
 				fmt.Sprintf("GOOS=%s", oses),
 				fmt.Sprintf("GOARCH=%s", arch),
 			)
-			fmt.Printf("gomodule %s\n", os.Getenv("GO111MODULE"))
-			fmt.Printf("cmd %s\n", cmd.String())
-			err = cmd.Run()
-			if err != nil {
-				fmt.Printf("error %s\n", err.Error())
-			}
-			return
+			return cmd.Run()
 		}(oses, arch, &wg)
 	}
 	wg.Wait()
