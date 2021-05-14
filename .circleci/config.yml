@@ -119,6 +119,7 @@ jobs:
         name: Publish prerelease
         command: |
           go get github.com/tcnksm/ghr
+          git checkout .
           ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_BRANCH} -n ${CIRCLE_TAG} -prerelease ${BUILD_VERSION} artifacts/
 
     - run:
@@ -159,30 +160,31 @@ jobs:
         name: Publish release
         command: |
           go get github.com/tcnksm/ghr
+          git checkout .
           ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_BRANCH} -n ${CIRCLE_TAG} ${BUILD_VERSION} artifacts/
 
     - run:
         name: Cleaning binaries
         command: mage clean
 
+# https://circleci.com/docs/2.0/workflows/#git-tag-job-execution
 workflows:
   version: 2
   test-and-build:
     jobs:
-    - build
+    - build:
+        filters:
+          tags:
+            only: /.*/
     - build-tags-and-publish-prerelease:
-        requires:
-        - build
         filters:
           tags:
             only: /^\d+\.\d+\.\d+-(.*)$/
           branches:
-            only: main
+            ignore: /.*/
     - build-tags-and-publish-release:
-        requires:
-        - build
         filters:
           tags:
             only: /^\d+\.\d+\.\d+$/
           branches:
-            only: main
+            ignore: /.*/

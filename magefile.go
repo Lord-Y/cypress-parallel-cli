@@ -47,7 +47,8 @@ func Build() (err error) {
 	wg := sync.WaitGroup{}
 	wg.Add(len(architecture))
 	for oses, arch := range architecture {
-		go func(oses, arch string) (err error) {
+		go func(oses, arch string, wg *sync.WaitGroup) (err error) {
+			defer wg.Done()
 			var appName string
 			if oses == "windows" {
 				appName = fmt.Sprintf("%s_%s_%s.exe", app, oses, arch)
@@ -70,10 +71,8 @@ func Build() (err error) {
 				fmt.Sprintf("GOOS=%s", oses),
 				fmt.Sprintf("GOARCH=%s", arch),
 			)
-			err = cmd.Run()
-			wg.Done()
-			return
-		}(oses, arch)
+			return cmd.Run()
+		}(oses, arch, &wg)
 	}
 	wg.Wait()
 	return
@@ -92,7 +91,8 @@ func Clean() {
 	wg := sync.WaitGroup{}
 	wg.Add(len(architecture))
 	for oses, arch := range architecture {
-		go func(oses, arch string) {
+		go func(oses, arch string, wg *sync.WaitGroup) {
+			defer wg.Done()
 			var appName string
 			if oses == "windows" {
 				appName = fmt.Sprintf("%s_%s_%s.exe", app, oses, arch)
@@ -102,8 +102,7 @@ func Clean() {
 			fmt.Printf("Cleaning %s ...\n", appName)
 			os.Remove(appName)
 			os.RemoveAll(artifacts)
-			wg.Done()
-		}(oses, arch)
+		}(oses, arch, &wg)
 	}
 	wg.Wait()
 }
