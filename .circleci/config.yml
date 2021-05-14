@@ -120,7 +120,7 @@ jobs:
         command: |
           go get github.com/tcnksm/ghr
           git checkout .
-          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_BRANCH} -n ${CIRCLE_TAG} -prerelease ${BUILD_VERSION} artifacts/
+          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${BUILD_VERSION} -prerelease ${BUILD_VERSION} artifacts/
 
     - run:
         name: Cleaning binaries
@@ -161,7 +161,7 @@ jobs:
         command: |
           go get github.com/tcnksm/ghr
           git checkout .
-          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_BRANCH} -n ${CIRCLE_TAG} ${BUILD_VERSION} artifacts/
+          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${BUILD_VERSION} ${BUILD_VERSION} artifacts/
 
     - run:
         name: Cleaning binaries
