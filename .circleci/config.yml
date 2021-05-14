@@ -160,13 +160,9 @@ workflows:
         filters:
           tags:
             only: /^\d+\.\d+\.\d+-(.*)$/
-          branches:
-            ignore: /.*/
     - build-tags-and-publish-release:
         requires:
         - build
         filters:
           tags:
             only: /^\d+\.\d+\.\d+$/
-          branches:
-            ignore: /.*/
