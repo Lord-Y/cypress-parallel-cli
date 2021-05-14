@@ -1,17 +1,22 @@
 ---
 version: 2.1
 
+# https://circleci.com/developer/images/image/cimg/go
+
+executors:
+  golang:
+    docker:
+    - image: cimg/go:1.16-node
+
 jobs:
   build:
-    docker:
-    - image: circleci/golang:1.16
-      environment:
-        CYPRESS_VERSION: 7.2.0
-        CACHE_VERSION: 1
-        CHROME_VERSION: 89.0.4389.72
-        FIREFOX_VERSION: 86.0.1
-        DBUS_SESSION_BUS_ADDRESS: /dev/null
-        CYPRESS_PARALLEL_CLI_LOG_LEVEL: debug
+    executor: golang
+    environment:
+      CYPRESS_VERSION: 7.2.0
+      CACHE_VERSION: 1
+      CHROME_VERSION: 89.0.4389.72
+      FIREFOX_VERSION: 86.0.1
+      DBUS_SESSION_BUS_ADDRESS: /dev/null
 
     steps:
     # pull sources
@@ -35,9 +40,6 @@ jobs:
           && sudo tar -C /opt -xjf /tmp/firefox.tar.bz2 \
           && rm /tmp/firefox.tar.bz2 \
           && sudo ln -fs /opt/firefox/firefox /usr/bin/firefox
-
-          which node &> /dev/null || curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-          which node &> /dev/null || sudo apt-get install -y nodejs
 
           # https://docs.cypress.io/guides/continuous-integration/introduction#Dependencies
           which cypress &> /dev/null || sudo apt-get install -y libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
@@ -83,8 +85,72 @@ jobs:
         name: Cleaning binaries
         command: mage clean
 
+  build-tags-and-publish-prerelease:
+    executor: golang
+    environment:
+      BUILD_VERSION: "v${CIRCLE_TAG}"
+      BUILD_REVISION: $(git rev-list -1 HEAD)
+
+    - run:
+        name: Generate binaries
+        command: mage build
+
+    - run:
+        name: Compress binaries
+        command: mage compress
+
+    - run:
+        name: Publish prerelease
+        command: |
+          go get github.com/tcnksm/ghr
+          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_BRANCH} -n ${CIRCLE_TAG} ${BUILD_VERSION} artifacts/
+
+    - run:
+        name: Cleaning binaries
+        command: mage clean
+
+  build-tags-and-publish-release:
+    executor: golang
+    environment:
+      BUILD_VERSION: "v${CIRCLE_TAG}"
+      BUILD_REVISION: $(git rev-list -1 HEAD)
+
+    - run:
+        name: Generate binaries
+        command: mage build
+
+    - run:
+        name: Compress binaries
+        command: mage compress
+
+    - run:
+        name: Publish release
+        command: |
+          go get github.com/tcnksm/ghr
+          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_BRANCH} -n ${CIRCLE_TAG} ${BUILD_VERSION} artifacts/
+
+    - run:
+        name: Cleaning binaries
+        command: mage clean
+
 workflows:
   version: 2
   test-and-build:
     jobs:
     - build
+    - build-tags-and-publish-prerelease:
+      requires:
+      - build
+      filters:
+        tags:
+          only: /^\d+\.\d+\.\d+-(.*)$/
+        branches:
+          ignore: /.*/
+    - build-tags-and-publish-release:
+      requires:
+      - build
+      filters:
+        tags:
+          only: /^\d+\.\d+\.\d+$/
+        branches:
+          ignore: /.*/
