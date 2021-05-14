@@ -155,18 +155,18 @@ workflows:
     jobs:
     - build
     - build-tags-and-publish-prerelease:
-      requires:
-      - build
-      filters:
-        tags:
-          only: /^\d+\.\d+\.\d+-(.*)$/
-        branches:
-          ignore: /.*/
+        requires:
+        - build
+        filters:
+          tags:
+            only: /^\d+\.\d+\.\d+-(.*)$/
+          branches:
+            ignore: /.*/
     - build-tags-and-publish-release:
-      requires:
-      - build
-      filters:
-        tags:
-          only: /^\d+\.\d+\.\d+$/
-        branches:
-          ignore: /.*/
+        requires:
+        - build
+        filters:
+          tags:
+            only: /^\d+\.\d+\.\d+$/
+          branches:
+            ignore: /.*/
