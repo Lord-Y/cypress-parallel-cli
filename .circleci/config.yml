@@ -100,6 +100,14 @@ jobs:
         - cypress-parallel-cli-{{ checksum "go.mod" }}-1
 
     - run:
+        name: download mage
+        command: go get -u github.com/magefile/mage
+
+    - run:
+        name: Install golang dependencies
+        command: mage installDeps
+
+    - run:
         name: Generate binaries
         command: mage build
 
@@ -132,6 +140,14 @@ jobs:
         - cypress-parallel-cli-{{ checksum "go.mod" }}-1
 
     - run:
+        name: download mage
+        command: go get -u github.com/magefile/mage
+
+    - run:
+        name: Install golang dependencies
+        command: mage installDeps
+
+    - run:
         name: Generate binaries
         command: mage build
 
@@ -161,7 +177,7 @@ workflows:
           tags:
             only: /^\d+\.\d+\.\d+-(.*)$/
           branches:
-            ignore: /.*/
+            only: main
     - build-tags-and-publish-release:
         requires:
         - build
@@ -169,4 +185,4 @@ workflows:
           tags:
             only: /^\d+\.\d+\.\d+$/
           branches:
-            ignore: /.*/
+            only: main
