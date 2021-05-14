@@ -11,3 +11,11 @@ Initial version
 ### Added
 - Add cypress options to clone and launch cypress unit testing.
 - Add version-details to print full version of the cli
+
+## [v0.0.1-beta1](https://github.com/Lord-Y/cypress-parallel-cli/releases/tag/v0.0.1-beta1) - 2021-05-14
+
+Initial beta version
+
+### Added
+- Add cypress options to clone and launch cypress unit testing.
+- Add version-details to print full version of the cli
