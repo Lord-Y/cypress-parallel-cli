@@ -29,6 +29,7 @@ jobs:
         name: Install requirements
         command: |
           export DEBIAN_FRONTEND="noninteractive"
+          sudo apt update
           sudo apt-get install -y mplayer fonts-liberation libappindicator3-1 xdg-utils libnss3
           which google-chrome &> /dev/null || wget -O /tmp/google-chrome-stable_current_amd64.deb "http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}-1_amd64.deb" && \
           sudo dpkg -i /tmp/google-chrome-stable_current_amd64.deb ; \
