@@ -75,11 +75,15 @@ jobs:
 
     - run:
         name: Generate binaries
-        command: mage build
+        command: |
+          mage build
+          ls -lrta $PWD
 
     - run:
         name: Compress binaries
-        command: mage compress
+        command: |
+          mage compress
+          ls -lrta artifacts/
 
     - run:
         name: Cleaning binaries
