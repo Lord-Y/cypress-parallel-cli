@@ -91,6 +91,14 @@ jobs:
       BUILD_VERSION: "v${CIRCLE_TAG}"
       BUILD_REVISION: $(git rev-list -1 HEAD)
 
+    steps:
+    # pull sources
+    - checkout
+
+    - restore_cache:
+        keys:
+        - cypress-parallel-cli-{{ checksum "go.mod" }}
+
     - run:
         name: Generate binaries
         command: mage build
@@ -114,6 +122,14 @@ jobs:
     environment:
       BUILD_VERSION: "v${CIRCLE_TAG}"
       BUILD_REVISION: $(git rev-list -1 HEAD)
+
+    steps:
+    # pull sources
+    - checkout
+
+    - restore_cache:
+        keys:
+        - cypress-parallel-cli-{{ checksum "go.mod" }}
 
     - run:
         name: Generate binaries
