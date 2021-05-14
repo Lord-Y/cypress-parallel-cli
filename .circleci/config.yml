@@ -182,7 +182,7 @@ workflows:
         - build
         filters:
           tags:
-            only: /^\d+\.\d+\.\d+-(.*)$/
+            only: /^v\d+\.\d+\.\d+-(.*)$/
           branches:
             ignore: /.*/
     - build-tags-and-publish-release:
@@ -191,6 +191,6 @@ workflows:
         - build
         filters:
           tags:
-            only: /^\d+\.\d+\.\d+$/
+            only: /^v\d+\.\d+\.\d+$/
           branches:
             ignore: /.*/
