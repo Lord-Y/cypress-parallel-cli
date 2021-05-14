@@ -104,6 +104,10 @@ jobs:
         command: go get -u github.com/magefile/mage
 
     - run:
+        name: Install golang dependencies
+        command: mage installDeps
+
+    - run:
         name: Generate binaries
         command: mage build
 
@@ -140,6 +144,10 @@ jobs:
         command: go get -u github.com/magefile/mage
 
     - run:
+        name: Install golang dependencies
+        command: mage installDeps
+
+    - run:
         name: Generate binaries
         command: mage build
 
@@ -168,9 +176,13 @@ workflows:
         filters:
           tags:
             only: /^\d+\.\d+\.\d+-(.*)$/
+          branches:
+            only: main
     - build-tags-and-publish-release:
         requires:
         - build
         filters:
           tags:
             only: /^\d+\.\d+\.\d+$/
+          branches:
+            only: main
