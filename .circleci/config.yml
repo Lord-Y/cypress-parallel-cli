@@ -111,7 +111,7 @@ jobs:
         name: Publish prerelease
         command: |
           go get github.com/tcnksm/ghr
-          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_BRANCH} -n ${CIRCLE_TAG} -prerelease ${BUILD_VERSION} artifacts/
+          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_BRANCH} -n ${CIRCLE_TAG} -prerelease ${BUILD_VERSION} artifacts/
 
     - run:
         name: Cleaning binaries
@@ -143,7 +143,7 @@ jobs:
         name: Publish release
         command: |
           go get github.com/tcnksm/ghr
-          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_BRANCH} -n ${CIRCLE_TAG} ${BUILD_VERSION} artifacts/
+          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_BRANCH} -n ${CIRCLE_TAG} ${BUILD_VERSION} artifacts/
 
     - run:
         name: Cleaning binaries
