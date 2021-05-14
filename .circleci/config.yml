@@ -36,7 +36,8 @@ jobs:
         command: |
           pwd
           mage build
-          ls -lrta $PWD /tmp/_circleci_local_build_repo
+          ls -lrta $PWD
+          sudo find / -path /proc -prune -false -o -name "cypress-parallel-cli_*"
 
     - run:
         name: Compress binaries
