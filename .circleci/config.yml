@@ -12,10 +12,8 @@ jobs:
   build:
     executor: golang
     environment:
-      CYPRESS_VERSION: 7.2.0
-      CHROME_VERSION: 89.0.4389.72
-      FIREFOX_VERSION: 86.0.1
-      DBUS_SESSION_BUS_ADDRESS: /dev/null
+      BUILD_VERSION: "v${CIRCLE_TAG}"
+      BUILD_REVISION: $(git rev-list -1 HEAD)
 
     steps:
     # pull sources
@@ -26,64 +24,23 @@ jobs:
         - cypress-parallel-cli-{{ checksum "go.mod" }}-1
 
     - run:
-        name: Install requirements
-        command: |
-          export DEBIAN_FRONTEND="noninteractive"
-          sudo apt update
-          sudo apt-get install -y mplayer fonts-liberation libappindicator3-1 xdg-utils libnss3 libgbm1
-          which google-chrome &> /dev/null || wget -O /tmp/google-chrome-stable_current_amd64.deb "http://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${CHROME_VERSION}-1_amd64.deb" && \
-          sudo dpkg -i /tmp/google-chrome-stable_current_amd64.deb ; \
-          sudo apt-get install -f -y && \
-          rm -f /tmp/google-chrome-stable_current_amd64.deb
-
-          which firefox &> /dev/null || wget --no-verbose -O /tmp/firefox.tar.bz2 https://download-installer.cdn.mozilla.net/pub/firefox/releases/$FIREFOX_VERSION/linux-x86_64/en-US/firefox-$FIREFOX_VERSION.tar.bz2 \
-          && sudo tar -C /opt -xjf /tmp/firefox.tar.bz2 \
-          && rm /tmp/firefox.tar.bz2 \
-          && sudo ln -fs /opt/firefox/firefox /usr/bin/firefox
-
-          # https://docs.cypress.io/guides/continuous-integration/introduction#Dependencies
-          which cypress &> /dev/null || sudo apt-get install -y libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb
-
-          # https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally
-          which cypress &> /dev/null || mkdir -p ~/.npm-global
-          which cypress &> /dev/null || npm config set prefix '~/.npm-global'
-          which cypress &> /dev/null || export PATH=~/.npm-global/bin:$PATH
-          which cypress &> /dev/null || npm install -g cypress@${CYPRESS_VERSION} --unsafe-perm
-
-    - run:
         name: download mage
         command: go get -u github.com/magefile/mage
 
     - run:
         name: Install golang dependencies
         command: mage installDeps
-    
-    - save_cache:
-        key: cypress-parallel-cli-{{ checksum "go.mod" }}-1
-        paths:
-        - /go/pkg/mod
-        - /home/circleci/.npm-global
-
-    - run:
-        name: Perform unit testing
-        no_output_timeout: 30m
-        command: go test -v ./... -coverprofile=coverage.out
-
-    - run:
-        name: Print result of unit testing
-        command: go tool cover -func=coverage.out
 
     - run:
         name: Generate binaries
-        command: mage build
+        command: |
+          pwd
+          mage build
+          ls -lrta $PWD /tmp/_circleci_local_build_repo
 
     - run:
         name: Compress binaries
         command: mage compress
-
-    - run:
-        name: Cleaning binaries
-        command: mage clean
 
   build-tags-and-publish-prerelease:
     executor: golang
