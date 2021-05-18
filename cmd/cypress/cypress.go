@@ -3,6 +3,7 @@ package cypress
 
 import (
 	"bytes"
+	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Lord-Y/cypress-parallel-cli/git"
 	"github.com/Lord-Y/cypress-parallel-cli/httprequests"
@@ -33,6 +35,7 @@ type Cypress struct {
 	Browser    string // Default browser to use to run unit testing
 	ConfigFile string // Relative path of cypress config if not cypress.json
 	ReportBack bool   // Notify api with cypress results
+	Timeout    int    // Timeout after which the program will exit with error
 }
 
 func init() {
@@ -44,6 +47,8 @@ func (c *Cypress) Run() {
 	var (
 		gc git.Repository
 	)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.Timeout)*time.Minute)
+	defer cancel()
 
 	gc.Repository = c.Repository
 	gc.Username = c.Username
@@ -58,6 +63,12 @@ func (c *Cypress) Run() {
 	}
 	defer os.RemoveAll(gitdir)
 	log.Debug().Msgf("Git temp dir %s", gitdir)
+
+	if ctx.Err() == context.DeadlineExceeded {
+		c.reportBack(ctx.Err())
+		log.Fatal().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
+		return
+	}
 
 	err = os.Chdir(gitdir)
 	if err != nil {
@@ -80,7 +91,8 @@ func (c *Cypress) Run() {
 		}
 	}
 
-	execUninstallCmd := exec.Command(
+	execUninstallCmd := exec.CommandContext(
+		ctx,
 		"npm",
 		"uninstall",
 		"cypress",
@@ -97,7 +109,8 @@ func (c *Cypress) Run() {
 		return
 	}
 
-	output, err := exec.Command(
+	output, err := exec.CommandContext(
+		ctx,
 		"npm",
 		"install",
 	).Output()
@@ -109,7 +122,8 @@ func (c *Cypress) Run() {
 		return
 	}
 
-	output, err = exec.Command(
+	output, err = exec.CommandContext(
+		ctx,
 		"npm",
 		"install",
 		"--save-dev",
@@ -143,7 +157,8 @@ func (c *Cypress) Run() {
 				fmt.Sprintf("reportFilename=%s", f),
 			}
 			log.Debug().Msgf("Running cypress command %s %s", "cypress", strings.Join(args, " "))
-			output, err := exec.Command(
+			output, err := exec.CommandContext(
+				ctx,
 				"cypress",
 				"run",
 				"--browser",

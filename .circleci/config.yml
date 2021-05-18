@@ -18,12 +18,11 @@ jobs:
       DBUS_SESSION_BUS_ADDRESS: /dev/null
 
     steps:
-    # pull sources
     - checkout
 
     - restore_cache:
         keys:
-        - cypress-parallel-cli-{{ checksum "go.mod" }}-1
+        - ${CIRCLE_PROJECT_REPONAME}-{{ checksum "go.mod" }}-1
 
     - run:
         name: Install requirements
@@ -59,7 +58,7 @@ jobs:
         command: mage installDeps
 
     - save_cache:
-        key: cypress-parallel-cli-{{ checksum "go.mod" }}-1
+        key: ${CIRCLE_PROJECT_REPONAME}-{{ checksum "go.mod" }}-1
         paths:
         - /go/pkg/mod
         - /home/circleci/.npm-global
@@ -89,12 +88,11 @@ jobs:
     executor: golang
 
     steps:
-    # pull sources
     - checkout
 
     - restore_cache:
         keys:
-        - cypress-parallel-cli-{{ checksum "go.mod" }}-1
+        - ${CIRCLE_PROJECT_REPONAME}-{{ checksum "go.mod" }}-1
 
     - run:
         name: download mage
@@ -110,7 +108,6 @@ jobs:
           export BUILD_VERSION=${CIRCLE_TAG}
           export BUILD_REVISION=$(git rev-list -1 HEAD)
           mage build
-          chmod +x ${CIRCLE_PROJECT_REPONAME}_*
 
     - run:
         name: Compress binaries
@@ -121,7 +118,7 @@ jobs:
         command: |
           go get github.com/tcnksm/ghr
           git checkout .
-          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -prerelease ${CIRCLE_TAG} artifacts/
+          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -prerelease ${CIRCLE_TAG} artifacts/
 
     - run:
         name: Cleaning binaries
@@ -131,12 +128,11 @@ jobs:
     executor: golang
 
     steps:
-    # pull sources
     - checkout
 
     - restore_cache:
         keys:
-        - cypress-parallel-cli-{{ checksum "go.mod" }}-1
+        - ${CIRCLE_PROJECT_REPONAME}-{{ checksum "go.mod" }}-1
 
     - run:
         name: download mage
@@ -152,7 +148,6 @@ jobs:
           export BUILD_VERSION=${CIRCLE_TAG}
           export BUILD_REVISION=$(git rev-list -1 HEAD)
           mage build
-          chmod +x ${CIRCLE_PROJECT_REPONAME}_*
 
     - run:
         name: Compress binaries
@@ -163,7 +158,7 @@ jobs:
         command: |
           go get github.com/tcnksm/ghr
           git checkout .
-          ghr -t ${GITHUB_ACCESS_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} ${CIRCLE_TAG} artifacts/
+          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} ${CIRCLE_TAG} artifacts/
 
     - run:
         name: Cleaning binaries
