@@ -15,6 +15,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	timeout = 10
+)
+
 func TestRun_fail(t *testing.T) {
 	var c Cypress
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
@@ -22,6 +26,7 @@ func TestRun_fail(t *testing.T) {
 	c.UniqID = "uid"
 	c.Branch = "test"
 	c.Username = "test"
+	c.Timeout = timeout
 
 	if os.Getenv("FATAL") == "1" {
 		c.Run()
@@ -41,6 +46,7 @@ func TestRun(t *testing.T) {
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
+	c.Timeout = timeout
 
 	proc, err := os.FindProcess(os.Getpid())
 	if err != nil {
@@ -70,6 +76,34 @@ func TestRun_fail_config_file(t *testing.T) {
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
 	c.ConfigFile = "cypress_fail.json"
+	c.Timeout = timeout
+
+	if os.Getenv("FATAL") == "1" {
+		c.Run()
+		return
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=TestRun_fail_config_file")
+	cmd.Env = append(os.Environ(), "FATAL=1")
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+		return
+	}
+	t.Fatalf("process ran with err %s, want exit status 1", err.Error())
+}
+
+func TestRun_fail_timeout(t *testing.T) {
+	var (
+		c      Cypress
+		stdout bytes.Buffer
+		stderr bytes.Buffer
+	)
+	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
+	c.Specs = "cypress/integration/examples/actions.spec.js"
+	c.UniqID = "uid"
+	c.ConfigFile = "cypress_fail.json"
+	c.Timeout = 10
 
 	if os.Getenv("FATAL") == "1" {
 		c.Run()
@@ -96,6 +130,7 @@ func TestRun_success(t *testing.T) {
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
+	c.Timeout = timeout
 
 	if os.Getenv("FATAL") == "0" {
 		c.Run()
@@ -122,6 +157,7 @@ func TestRun_success_reportback(t *testing.T) {
 	c.UniqID = "uid"
 	c.ReportBack = true
 	c.ApiURL = ts.URL
+	c.Timeout = timeout
 	c.Run()
 }
 
@@ -145,6 +181,7 @@ func TestRun_fail_reportback(t *testing.T) {
 	c.UniqID = "uid"
 	c.ReportBack = true
 	c.ApiURL = ts.URL
+	c.Timeout = timeout
 
 	if os.Getenv("FATAL") == "1" {
 		c.Run()
@@ -169,6 +206,7 @@ func TestReportBack(t *testing.T) {
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
 	c.ReportBack = true
+	c.Timeout = timeout
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "hello")

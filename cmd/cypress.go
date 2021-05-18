@@ -81,6 +81,13 @@ func Cypress(c *cli.Context) (z *cli.Command) {
 				Usage:       "Send result to api",
 				Destination: &cmd.ReportBack,
 			},
+			&cli.IntFlag{
+				Name:        "timeout",
+				Aliases:     []string{"t"},
+				Value:       10,
+				Usage:       "Timeout after which the program will exit with error",
+				Destination: &cmd.Timeout,
+			},
 		},
 		Action: func(c *cli.Context) error {
 			cmd.Run()
