@@ -57,7 +57,7 @@ func (c *Cypress) Run() {
 
 	gitdir, err := gc.Clone()
 	if err != nil {
-		c.reportBack(err)
+		c.reportBack(err, "")
 		log.Fatal().Err(err).Msg("Error occured while cloning git repository")
 		return
 	}
@@ -65,14 +65,14 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("Git temp dir %s", gitdir)
 
 	if ctx.Err() == context.DeadlineExceeded {
-		c.reportBack(ctx.Err())
+		c.reportBack(ctx.Err(), "")
 		log.Fatal().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
 		return
 	}
 
 	err = os.Chdir(gitdir)
 	if err != nil {
-		c.reportBack(err)
+		c.reportBack(err, "")
 		log.Fatal().Err(err).Msg("Error occured while chdir git repository")
 		return
 	}
@@ -80,12 +80,12 @@ func (c *Cypress) Run() {
 	if c.ConfigFile != "" {
 		var info os.FileInfo
 		if info, err = os.Stat(fmt.Sprintf("%s/%s", gitdir, c.ConfigFile)); os.IsNotExist(err) {
-			c.reportBack(err)
+			c.reportBack(err, "")
 			log.Fatal().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
 		if !info.Mode().IsRegular() {
-			c.reportBack(err)
+			c.reportBack(err, "")
 			log.Fatal().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
@@ -104,7 +104,7 @@ func (c *Cypress) Run() {
 	)
 
 	if err := execUninstallCmd.Run(); err != nil {
-		c.reportBack(err)
+		c.reportBack(err, "")
 		log.Fatal().Err(err).Msg("Error occured while forcing uninstall of local cypress package")
 		return
 	}
@@ -117,7 +117,7 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("NPM install output %s", string(output))
 
 	if err != nil {
-		c.reportBack(err)
+		c.reportBack(err, "")
 		log.Fatal().Err(err).Msgf("Error occured while installing user packages")
 		return
 	}
@@ -132,7 +132,7 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("Mochawesome install output %s", string(output))
 
 	if err != nil {
-		c.reportBack(err)
+		c.reportBack(err, "")
 		log.Fatal().Err(err).Msgf("Error occured while installing mochawesome")
 		return
 	}
@@ -173,8 +173,7 @@ func (c *Cypress) Run() {
 			).Output()
 			log.Debug().Msgf("Execution output %s", string(output))
 			if err != nil {
-				c.reportBack(err)
-
+				c.reportBack(err, spec)
 			}
 			if c.ReportBack {
 				log.Debug().Msgf("Reporting back result to %s", fmt.Sprintf("%s%s", c.ApiURL, apiURI))
@@ -182,14 +181,14 @@ func (c *Cypress) Run() {
 				of, err := os.Open(result)
 				if err != nil {
 					log.Error().Err(err).Msgf("Fail to open file %s", result)
-					c.reportBack(err)
+					c.reportBack(err, spec)
 					return
 				}
 				defer of.Close()
 				fo, err := io.ReadAll(of)
 				if err != nil {
 					log.Error().Err(err).Msgf("Fail to read file %s content", result)
-					c.reportBack(err)
+					c.reportBack(err, spec)
 					return
 				}
 				headers := make(map[string]string)
@@ -197,7 +196,7 @@ func (c *Cypress) Run() {
 				buf := new(bytes.Buffer)
 				if err := json.Compact(buf, fo); err != nil {
 					log.Error().Err(err).Msg("Fail to compact json result")
-					c.reportBack(err)
+					c.reportBack(err, spec)
 					return
 				}
 
@@ -219,13 +218,11 @@ func (c *Cypress) Run() {
 	log.Info().Msg("Program execution successful")
 }
 
-func (c *Cypress) reportBack(err error) {
+func (c *Cypress) reportBack(err error, spec string) {
 	if c.ReportBack {
 		headers := make(map[string]string)
 		headers["Content-Type"] = "application/x-www-form-urlencoded"
-
-		specs := strings.Split(c.Specs, ",")
-		for _, spec := range specs {
+		if spec != "" {
 			payload := fmt.Sprintf("result=%s", "{}")
 			payload += "&executionStatus=FAILED"
 			payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
@@ -237,6 +234,22 @@ func (c *Cypress) reportBack(err error) {
 			if err != nil {
 				log.Error().Err(err).Msg("Fail to report back result")
 				return
+			}
+		} else {
+			specs := strings.Split(c.Specs, ",")
+			for _, spec := range specs {
+				payload := fmt.Sprintf("result=%s", "{}")
+				payload += "&executionStatus=FAILED"
+				payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
+				payload += fmt.Sprintf("&branch=%s", c.Branch)
+				payload += fmt.Sprintf("&spec=%s", spec)
+				payload += fmt.Sprintf("&executionErrorOutput=%s", err.Error())
+
+				_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload, "")
+				if err != nil {
+					log.Error().Err(err).Msg("Fail to report back result")
+					return
+				}
 			}
 		}
 	}

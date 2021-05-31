@@ -198,7 +198,7 @@ func TestRun_fail_reportback(t *testing.T) {
 	assert.NoError(err)
 }
 
-func TestReportBack(t *testing.T) {
+func TestReportBack_spec_all(t *testing.T) {
 	var (
 		c Cypress
 	)
@@ -214,5 +214,24 @@ func TestReportBack(t *testing.T) {
 	defer ts.Close()
 
 	c.ApiURL = ts.URL
-	c.reportBack(fmt.Errorf("Execution failed"))
+	c.reportBack(fmt.Errorf("Execution failed"), "")
+}
+
+func TestReportBackspec_specific(t *testing.T) {
+	var (
+		c Cypress
+	)
+	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
+	c.Specs = "cypress/integration/examples/actions.spec.js"
+	c.UniqID = "uid"
+	c.ReportBack = true
+	c.Timeout = timeout
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "hello")
+	}))
+	defer ts.Close()
+
+	c.ApiURL = ts.URL
+	c.reportBack(fmt.Errorf("Execution failed"), "cypress/integration/examples/actions.spec.js")
 }
