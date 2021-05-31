@@ -118,7 +118,7 @@ jobs:
         command: |
           go get github.com/tcnksm/ghr
           git checkout .
-          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -prerelease ${CIRCLE_TAG} artifacts/
+          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -b "See changelog [here](https://github.com/Lord-Y/cypress-parallel-cli/blob/main/CHANGELOG.md)" -prerelease ${CIRCLE_TAG} artifacts/
 
     - run:
         name: Cleaning binaries
@@ -158,7 +158,7 @@ jobs:
         command: |
           go get github.com/tcnksm/ghr
           git checkout .
-          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} ${CIRCLE_TAG} artifacts/
+          ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -b "See changelog [here](https://github.com/Lord-Y/cypress-parallel-cli/blob/main/CHANGELOG.md)" ${CIRCLE_TAG} artifacts/
 
     - run:
         name: Cleaning binaries
