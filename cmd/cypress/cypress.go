@@ -174,6 +174,7 @@ func (c *Cypress) Run() {
 			log.Debug().Msgf("Execution output %s", string(output))
 			if err != nil {
 				c.reportBack(err, spec)
+				return
 			}
 			if c.ReportBack {
 				log.Debug().Msgf("Reporting back result to %s", fmt.Sprintf("%s%s", c.ApiURL, apiURI))
@@ -213,6 +214,11 @@ func (c *Cypress) Run() {
 				}
 			}
 		}(gitdir, spec, c, &wg)
+		if ctx.Err() == context.DeadlineExceeded {
+			c.reportBack(ctx.Err(), spec)
+			log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
+			return
+		}
 	}
 	wg.Wait()
 	log.Info().Msg("Program execution successful")
@@ -243,7 +249,7 @@ func (c *Cypress) reportBack(err error, spec string) {
 				payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
 				payload += fmt.Sprintf("&branch=%s", c.Branch)
 				payload += fmt.Sprintf("&spec=%s", spec)
-				payload += fmt.Sprintf("&executionErrorOutput=%s", err.Error())
+				payload += fmt.Sprintf("&executionErrorOutput=%s", err)
 
 				_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload, "")
 				if err != nil {
