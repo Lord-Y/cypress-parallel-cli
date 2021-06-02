@@ -60,7 +60,7 @@ jobs:
     - save_cache:
         key: ${CIRCLE_PROJECT_REPONAME}-{{ checksum "go.mod" }}-1
         paths:
-        - /go/pkg/mod
+        - /home/circleci/go
         - /home/circleci/.npm-global
 
     - run:
