@@ -20,6 +20,9 @@ jobs:
     steps:
     - checkout
 
+    - setup_remote_docker:
+        docker_layer_caching: true
+
     - restore_cache:
         keys:
         - ${CIRCLE_PROJECT_REPONAME}-{{ checksum "go.mod" }}-1
@@ -90,6 +93,9 @@ jobs:
     steps:
     - checkout
 
+    - setup_remote_docker:
+        docker_layer_caching: true
+
     - restore_cache:
         keys:
         - ${CIRCLE_PROJECT_REPONAME}-{{ checksum "go.mod" }}-1
@@ -129,6 +135,9 @@ jobs:
 
     steps:
     - checkout
+
+    - setup_remote_docker:
+        docker_layer_caching: true
 
     - restore_cache:
         keys:
