@@ -22,9 +22,8 @@ var (
 	artifacts    = "artifacts"
 	sha          = "sha256sums.txt"
 	architecture = map[string]string{
-		"linux":   "amd64",
-		"darwin":  "amd64",
-		"windows": "amd64",
+		"linux":  "amd64",
+		"darwin": "amd64",
 	}
 )
 
