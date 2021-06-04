@@ -8,11 +8,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/Lord-Y/cypress-parallel-cli/git"
@@ -117,8 +119,8 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("NPM install output %s", string(output))
 
 	if err != nil {
-		c.reportBack(err, "")
-		log.Fatal().Err(err).Msgf("Error occured while installing user packages")
+		c.reportBack(fmt.Errorf("%s | %s", string(output), err), "")
+		log.Fatal().Err(fmt.Errorf("%s | %s", string(output), err)).Msgf("Error occured while installing user packages")
 		return
 	}
 
@@ -132,17 +134,28 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("Mochawesome install output %s", string(output))
 
 	if err != nil {
-		c.reportBack(err, "")
-		log.Fatal().Err(err).Msgf("Error occured while installing mochawesome")
+		c.reportBack(fmt.Errorf("%s | %s", string(output), err), "")
+		log.Fatal().Err(fmt.Errorf("%s | %s", string(output), err)).Msgf("Error occured while installing mochawesome")
 		return
 	}
 
 	specs := strings.Split(c.Specs, ",")
 	wg := sync.WaitGroup{}
-	wg.Add(len(specs))
-	for _, spec := range specs {
-		go func(gitdir, spec string, c *Cypress, wg *sync.WaitGroup) {
+	for i, spec := range specs {
+		wg.Add(1)
+		go func(i int, spec string) {
 			defer wg.Done()
+			// https://docs.cypress.io/guides/continuous-integration/introduction#Xvfb
+			screen := fmt.Sprintf(":%d", 99+i)
+			cmd := exec.Command("sh", "-c", fmt.Sprintf("Xvfb %s &", screen))
+			log.Debug().Msgf("Execution output of screen command %s", cmd.String())
+			err := cmd.Run()
+			if err != nil {
+				log.Error().Err(err).Msgf("Fail to execute Xvfb command %s", err.Error())
+				c.reportBack(err, spec)
+				return
+			}
+
 			f := filepath.Base(spec)
 			args := []string{
 				"run",
@@ -157,7 +170,8 @@ func (c *Cypress) Run() {
 				fmt.Sprintf("reportFilename=%s", f),
 			}
 			log.Debug().Msgf("Running cypress command %s %s", "cypress", strings.Join(args, " "))
-			output, err := exec.CommandContext(
+
+			process := exec.CommandContext(
 				ctx,
 				"cypress",
 				"run",
@@ -170,55 +184,61 @@ func (c *Cypress) Run() {
 				"mochawesome",
 				"--reporter-options",
 				fmt.Sprintf("reportFilename=%s", f),
-			).Output()
+			)
+			process.Env = append(os.Environ(), fmt.Sprintf("DISPLAY=%s", screen))
+			process.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+			go func() {
+				<-ctx.Done()
+				if ctx.Err() == context.DeadlineExceeded {
+					syscall.Kill(-process.Process.Pid, syscall.SIGKILL)
+					c.reportBack(ctx.Err(), spec)
+					log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
+					return
+				}
+			}()
+			output, err := process.Output()
 			log.Debug().Msgf("Execution output %s", string(output))
 			if err != nil {
+				log.Error().Err(err).Msgf("Fail to execute cypress command %s", string(output))
+				c.reportBack(fmt.Errorf("%s | %s", string(output), err), spec)
+				return
+			}
+			log.Debug().Msgf("Reporting back result to %s", fmt.Sprintf("%s%s", c.ApiURL, apiURI))
+			result := fmt.Sprintf("%s/mochawesome-report/%s.json", gitdir, strings.TrimSuffix(f, ".js"))
+			of, err := os.Open(result)
+			if err != nil {
+				log.Error().Err(err).Msgf("Fail to open file %s", result)
 				c.reportBack(err, spec)
 				return
 			}
-			if c.ReportBack {
-				log.Debug().Msgf("Reporting back result to %s", fmt.Sprintf("%s%s", c.ApiURL, apiURI))
-				result := fmt.Sprintf("%s/mochawesome-report/%s.json", gitdir, strings.TrimSuffix(f, ".js"))
-				of, err := os.Open(result)
-				if err != nil {
-					log.Error().Err(err).Msgf("Fail to open file %s", result)
-					c.reportBack(err, spec)
-					return
-				}
-				defer of.Close()
-				fo, err := io.ReadAll(of)
-				if err != nil {
-					log.Error().Err(err).Msgf("Fail to read file %s content", result)
-					c.reportBack(err, spec)
-					return
-				}
-				headers := make(map[string]string)
-				headers["Content-Type"] = "application/x-www-form-urlencoded"
-				buf := new(bytes.Buffer)
-				if err := json.Compact(buf, fo); err != nil {
-					log.Error().Err(err).Msg("Fail to compact json result")
-					c.reportBack(err, spec)
-					return
-				}
-
-				payload := fmt.Sprintf("result=%s", hex.EncodeToString(buf.Bytes()))
-				payload += "&executionStatus=DONE"
-				payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
-				payload += fmt.Sprintf("&branch=%s", c.Branch)
-				payload += fmt.Sprintf("&spec=%s", spec)
-				payload += fmt.Sprintf("&encoded=%s", "true")
-
-				_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload, "")
-				if err != nil {
-					log.Error().Err(err).Msg("Fail to report back result")
-				}
+			defer of.Close()
+			fo, err := io.ReadAll(of)
+			if err != nil {
+				log.Error().Err(err).Msgf("Fail to read file %s content", result)
+				c.reportBack(err, spec)
+				return
 			}
-		}(gitdir, spec, c, &wg)
-		if ctx.Err() == context.DeadlineExceeded {
-			c.reportBack(ctx.Err(), spec)
-			log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
-			return
-		}
+			headers := make(map[string]string)
+			headers["Content-Type"] = "application/x-www-form-urlencoded"
+			buf := new(bytes.Buffer)
+			if err := json.Compact(buf, fo); err != nil {
+				log.Error().Err(err).Msg("Fail to compact json result")
+				c.reportBack(err, spec)
+				return
+			}
+
+			payload := fmt.Sprintf("result=%s", hex.EncodeToString(buf.Bytes()))
+			payload += "&executionStatus=DONE"
+			payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
+			payload += fmt.Sprintf("&branch=%s", c.Branch)
+			payload += fmt.Sprintf("&spec=%s", spec)
+			payload += fmt.Sprintf("&encoded=%s", "true")
+
+			_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload, "")
+			if err != nil {
+				log.Error().Err(err).Msg("Fail to report back result")
+			}
+		}(i, spec)
 	}
 	wg.Wait()
 	log.Info().Msg("Program execution successful")
@@ -229,14 +249,15 @@ func (c *Cypress) reportBack(err error, spec string) {
 		headers := make(map[string]string)
 		headers["Content-Type"] = "application/x-www-form-urlencoded"
 		if spec != "" {
-			payload := fmt.Sprintf("result=%s", "{}")
-			payload += "&executionStatus=FAILED"
-			payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
-			payload += fmt.Sprintf("&branch=%s", c.Branch)
-			payload += fmt.Sprintf("&spec=%s", spec)
-			payload += fmt.Sprintf("&executionErrorOutput=%s", err.Error())
+			payload := url.Values{}
+			payload.Set("result", "{}")
+			payload.Set("executionStatus", "FAILED")
+			payload.Set("uniqId", c.UniqID)
+			payload.Set("branch", c.Branch)
+			payload.Set("spec", spec)
+			payload.Set("executionErrorOutput", err.Error())
 
-			_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload, "")
+			_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload.Encode(), "")
 			if err != nil {
 				log.Error().Err(err).Msg("Fail to report back result")
 				return
@@ -244,14 +265,15 @@ func (c *Cypress) reportBack(err error, spec string) {
 		} else {
 			specs := strings.Split(c.Specs, ",")
 			for _, spec := range specs {
-				payload := fmt.Sprintf("result=%s", "{}")
-				payload += "&executionStatus=FAILED"
-				payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
-				payload += fmt.Sprintf("&branch=%s", c.Branch)
-				payload += fmt.Sprintf("&spec=%s", spec)
-				payload += fmt.Sprintf("&executionErrorOutput=%s", err)
+				payload := url.Values{}
+				payload.Set("result", "{}")
+				payload.Set("executionStatus", "FAILED")
+				payload.Set("uniqId", c.UniqID)
+				payload.Set("branch", c.Branch)
+				payload.Set("spec", spec)
+				payload.Set("executionErrorOutput", err.Error())
 
-				_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload, "")
+				_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload.Encode(), "")
 				if err != nil {
 					log.Error().Err(err).Msg("Fail to report back result")
 					return
