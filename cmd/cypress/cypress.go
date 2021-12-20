@@ -23,7 +23,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var apiURI = "/api/v1/cypress-parallel-api/executions/update"
+var apiURI = "/api/v1/executions/update"
 
 // Cypress requirements to run cypress command
 type Cypress struct {
