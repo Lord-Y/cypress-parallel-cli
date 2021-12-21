@@ -15,7 +15,7 @@ func Cypress(c *cli.Context) (z *cli.Command) {
 				Name:        "api-url",
 				Aliases:     []string{"a"},
 				Value:       "http://127.0.0.1:8080",
-				Usage:       "HTTP(s) api url of cypress-parallel-api",
+				Usage:       "HTTP(s) api url of cypress-parallel",
 				Destination: &cmd.ApiURL,
 			},
 			&cli.StringFlag{
