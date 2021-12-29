@@ -185,23 +185,27 @@ func (c *Cypress) Run() {
 				"--reporter-options",
 				fmt.Sprintf("reportFilename=%s", f),
 			)
-			process.Env = append(os.Environ(), fmt.Sprintf("DISPLAY=%s", screen))
+			process.Env = append(
+				os.Environ(),
+				fmt.Sprintf("DISPLAY=%s", screen),
+				fmt.Sprintf("NO_COLOR=%d", 1),
+			)
 			process.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 			go func() {
 				<-ctx.Done()
 				if ctx.Err() == context.DeadlineExceeded {
-					syscall.Kill(-process.Process.Pid, syscall.SIGKILL)
+					_ = syscall.Kill(-process.Process.Pid, syscall.SIGKILL)
 					c.reportBack(ctx.Err(), spec)
 					log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
 					return
 				}
 			}()
+			var execution_failed bool
 			output, err := process.Output()
 			log.Debug().Msgf("Execution output %s", string(output))
 			if err != nil {
 				log.Error().Err(err).Msgf("Fail to execute cypress command %s", string(output))
-				c.reportBack(fmt.Errorf("%s | %s", string(output), err), spec)
-				return
+				execution_failed = true
 			}
 			log.Debug().Msgf("Reporting back result to %s", fmt.Sprintf("%s%s", c.ApiURL, apiURI))
 			result := fmt.Sprintf("%s/mochawesome-report/%s.json", gitdir, strings.TrimSuffix(f, ".js"))
@@ -228,11 +232,15 @@ func (c *Cypress) Run() {
 			}
 
 			payload := fmt.Sprintf("result=%s", hex.EncodeToString(buf.Bytes()))
-			payload += "&executionStatus=DONE"
+			if execution_failed {
+				payload += "&executionStatus=DONE"
+			} else {
+				payload += "&executionStatus=FAILED"
+			}
 			payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
 			payload += fmt.Sprintf("&branch=%s", c.Branch)
 			payload += fmt.Sprintf("&spec=%s", spec)
-			payload += fmt.Sprintf("&encoded=%s", "true")
+			payload += "&encoded=true"
 
 			_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload, "")
 			if err != nil {

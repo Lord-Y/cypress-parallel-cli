@@ -62,7 +62,7 @@ func TestRun(t *testing.T) {
 		signal.Stop(sigc)
 	}()
 
-	proc.Signal(os.Interrupt)
+	_ = proc.Signal(os.Interrupt)
 	time.Sleep(1 * time.Second)
 }
 
