@@ -13,11 +13,10 @@ import (
 )
 
 type Repository struct {
-	Repository    string // HTTP(s) git repository
-	Username      string // Username to use to fetch repository if required
-	Password      string // Password to use to fetch repository if required
-	Ref           string // Ref in which branch e.g test or refs/head/test
-	SSHPrivateKey string // Ssh private key to use to clone the git repository
+	Repository string // HTTP(s) git repository
+	Username   string // Username to use to fetch repository if required
+	Password   string // Password to use to fetch repository if required
+	Ref        string // Ref in which branch e.g test or refs/head/test
 }
 
 func init() {
