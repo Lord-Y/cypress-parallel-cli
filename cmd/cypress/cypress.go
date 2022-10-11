@@ -55,7 +55,7 @@ func (c *Cypress) Run() {
 	gc.Repository = c.Repository
 	gc.Username = c.Username
 	gc.Password = c.Password
-	gc.Branch = c.Branch
+	gc.Ref = c.Branch
 
 	gitdir, err := gc.Clone()
 	if err != nil {
