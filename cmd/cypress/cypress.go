@@ -157,6 +157,9 @@ func (c *Cypress) Run() {
 			}
 
 			f := filepath.Base(spec)
+			reportFilename := strings.TrimSuffix(f, ".spec.js")
+			reportFilename = strings.TrimSuffix(reportFilename, ".cy.js")
+
 			args := []string{
 				"run",
 				"--browser",
@@ -167,7 +170,7 @@ func (c *Cypress) Run() {
 				"--reporter",
 				"mochawesome",
 				"--reporter-options",
-				fmt.Sprintf("reportFilename=%s", f),
+				fmt.Sprintf("reportFilename=%s", reportFilename),
 			}
 			log.Debug().Msgf("Running cypress command %s %s", "cypress", strings.Join(args, " "))
 
@@ -183,7 +186,7 @@ func (c *Cypress) Run() {
 				"--reporter",
 				"mochawesome",
 				"--reporter-options",
-				fmt.Sprintf("reportFilename=%s", f),
+				fmt.Sprintf("reportFilename=%s", reportFilename),
 			)
 			process.Env = append(
 				os.Environ(),
@@ -208,7 +211,7 @@ func (c *Cypress) Run() {
 				execution_failed = true
 			}
 			log.Debug().Msgf("Reporting back result to %s", fmt.Sprintf("%s%s", c.ApiURL, apiURI))
-			result := fmt.Sprintf("%s/mochawesome-report/%s.json", gitdir, strings.TrimSuffix(f, ".js"))
+			result := fmt.Sprintf("%s/mochawesome-report/%s.json", gitdir, reportFilename)
 			of, err := os.Open(result)
 			if err != nil {
 				log.Error().Err(err).Msgf("Fail to open file %s", result)
