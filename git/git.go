@@ -4,42 +4,50 @@ package git
 import (
 	"os"
 
+	"github.com/Lord-Y/cypress-parallel-cli/logger"
 	git "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/icrowley/fake"
+	"github.com/rs/zerolog/log"
 )
 
 type Repository struct {
-	Repository string // HTTP(s) git repository
-	Username   string // Username to use to fetch repository if required
-	Password   string // Password to use to fetch repository if required
-	Branch     string // Branch in which specs are hold
+	Repository    string // HTTP(s) git repository
+	Username      string // Username to use to fetch repository if required
+	Password      string // Password to use to fetch repository if required
+	Ref           string // Ref in which branch e.g test or refs/head/test
+	SSHPrivateKey string // Ssh private key to use to clone the git repository
+}
+
+func init() {
+	logger.SetLoggerLogLevel()
 }
 
 // Clone permit to clone git repository
 func (c *Repository) Clone() (z string, err error) {
 	var (
-		targetBranch string
-		result       *git.Repository
+		targetRef string
+		result    *git.Repository
 	)
 
-	if c.Branch != "" {
-		if c.Branch == "master" {
-			targetBranch = ""
+	if c.Ref != "" {
+		if c.Ref == "master" || c.Ref == "refs/heads/master" {
+			targetRef = ""
 		} else {
-			targetBranch = c.Branch
+			targetRef = c.Ref
 		}
 	} else {
-		targetBranch = ""
+		targetRef = ""
 	}
+	log.Debug().Msgf("branch %s", targetRef)
 
 	z, err = os.MkdirTemp(os.TempDir(), fake.CharactersN(10))
 	if err != nil {
-		return z, err
+		return
 	}
 
-	if targetBranch != "" {
+	if targetRef != "" {
 		if c.Username != "" {
 			result, err = git.PlainClone(z, false, &git.CloneOptions{
 				URL: c.Repository,
@@ -47,24 +55,29 @@ func (c *Repository) Clone() (z string, err error) {
 					Username: c.Username,
 					Password: c.Password,
 				},
+				ReferenceName: plumbing.ReferenceName(targetRef),
+				Depth:         1,
 			})
+			if err != nil {
+				return z, err
+			}
+			_, err := result.Head()
+			if err != nil {
+				return z, err
+			}
 		} else {
 			result, err = git.PlainClone(z, false, &git.CloneOptions{
-				URL: c.Repository,
+				URL:           c.Repository,
+				ReferenceName: plumbing.ReferenceName(targetRef),
+				Depth:         1,
 			})
-		}
-		if err != nil {
-			return z, err
-		}
-		w, err := result.Worktree()
-		if err != nil {
-			return z, err
-		}
-		err = w.Checkout(&git.CheckoutOptions{
-			Branch: plumbing.ReferenceName(targetBranch),
-		})
-		if err != nil {
-			return z, err
+			if err != nil {
+				return
+			}
+			_, err := result.Head()
+			if err != nil {
+				return z, err
+			}
 		}
 	} else {
 		if c.Username != "" {
@@ -74,10 +87,12 @@ func (c *Repository) Clone() (z string, err error) {
 					Username: c.Username,
 					Password: c.Password,
 				},
+				Depth: 1,
 			})
 		} else {
 			_, err = git.PlainClone(z, false, &git.CloneOptions{
-				URL: c.Repository,
+				URL:   c.Repository,
+				Depth: 1,
 			})
 		}
 		if err != nil {
