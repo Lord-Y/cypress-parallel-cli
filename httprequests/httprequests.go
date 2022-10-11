@@ -1,7 +1,7 @@
 package httprequests
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -108,7 +108,7 @@ func PerformRequests(headers map[string]string, method string, url string, paylo
 			return nil, nil, err
 		}
 		defer resp.Body.Close()
-		body, err = ioutil.ReadAll(resp.Body)
+		body, err = io.ReadAll(resp.Body)
 		log.Debug().Msgf("%s %s statusCode %d headers: %s body %v", req.Method, req.URL.Redacted(), resp.StatusCode, resp.Header, string(body))
 	}
 	return body, resp, err

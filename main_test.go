@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -101,7 +101,7 @@ func TestMainCypress(t *testing.T) {
 
 	app := cli.NewApp()
 	for _, tc := range tests {
-		app.Writer = ioutil.Discard
+		app.Writer = io.Discard
 		app.Commands = []*cli.Command{
 			cypress,
 		}
@@ -144,7 +144,7 @@ func TestMainCypressReportBack(t *testing.T) {
 
 	app := cli.NewApp()
 	for _, tc := range tests {
-		app.Writer = ioutil.Discard
+		app.Writer = io.Discard
 		app.Commands = []*cli.Command{
 			cypress,
 		}
@@ -175,7 +175,7 @@ func TestVersionDetails(t *testing.T) {
 
 	app := cli.NewApp()
 	for _, tc := range tests {
-		app.Writer = ioutil.Discard
+		app.Writer = io.Discard
 		app.Commands = []*cli.Command{
 			versionDetails,
 		}
