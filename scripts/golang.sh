@@ -6,7 +6,7 @@ install_go()
 {
   mkdir -p ~/go/bin
   test -f /usr/bin/sudo && sudo rm -rf /usr/local/go ~/.cache/go-build/* ~/go/* /tmp/go${VERSION}.linux-amd64.tar.gz || rm -rf /usr/local/go ~/.cache/go-build/* ~/go/* /tmp/go${VERSION}.linux-amd64.tar.gz
-  wget https://golang.org/dl/go${VERSION}.linux-amd64.tar.gz -P /tmp
+  wget https://go.dev/dl/go${VERSION}.linux-amd64.tar.gz -P /tmp
 
   test -f /usr/bin/sudo && sudo tar -C /usr/local -xzf /tmp/go${VERSION}.linux-amd64.tar.gz || tar -C /usr/local -xzf /tmp/go${VERSION}.linux-amd64.tar.gz
   rm -rf /tmp/go${VERSION}.linux-amd64.tar.gz
