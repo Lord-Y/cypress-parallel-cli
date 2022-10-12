@@ -39,7 +39,7 @@ func (c *Repository) Clone() (z string, err error) {
 	} else {
 		targetRef = ""
 	}
-	log.Debug().Msgf("branch %s", targetRef)
+	log.Debug().Msgf("Branch or tag %s", targetRef)
 
 	z, err = os.MkdirTemp(os.TempDir(), fake.CharactersN(10))
 	if err != nil {
@@ -68,13 +68,16 @@ func (c *Repository) Clone() (z string, err error) {
 			result, err = git.PlainClone(z, false, &git.CloneOptions{
 				URL:           c.Repository,
 				ReferenceName: plumbing.ReferenceName(targetRef),
+				SingleBranch:  true,
 				Depth:         1,
 			})
 			if err != nil {
+				log.Error().Err(err).Msg("putain")
 				return
 			}
 			_, err := result.Head()
 			if err != nil {
+				log.Error().Err(err).Msg("zzz")
 				return z, err
 			}
 		}
