@@ -6,15 +6,15 @@ version: 2.1
 executors:
   golang:
     docker:
-    - image: cimg/go:1.17-node
+    - image: cimg/go:1.19-node
 
 jobs:
   build:
     executor: golang
     environment:
-      CYPRESS_VERSION: 7.2.0
-      CHROME_VERSION: 89.0.4389.72
-      FIREFOX_VERSION: 86.0.1
+      CYPRESS_VERSION: 9.7.0
+      CHROME_VERSION: 100.0.4896.88
+      FIREFOX_VERSION: 99.0.1
       DBUS_SESSION_BUS_ADDRESS: /dev/null
 
     steps:
