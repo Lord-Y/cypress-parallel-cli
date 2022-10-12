@@ -152,13 +152,13 @@ func (c *Cypress) Run() {
 		"npm",
 		"install",
 	).Output()
+	log.Debug().Msgf("NPM install output %s", string(output))
 
 	if err != nil {
 		c.reportBack(err, "", true, "{}", false)
 		log.Fatal().Err(err).Msgf("Error occured while installing user packages")
 		return
 	}
-	log.Debug().Msgf("NPM install output %s", string(output))
 
 	output, err = exec.CommandContext(
 		ctx,
@@ -167,13 +167,13 @@ func (c *Cypress) Run() {
 		"--save-dev",
 		"mochawesome",
 	).Output()
+	log.Debug().Msgf("Mochawesome install output %s", string(output))
 
 	if err != nil {
 		c.reportBack(err, "", true, "{}", false)
 		log.Fatal().Err(err).Msgf("Error occured while installing mochawesome")
 		return
 	}
-	log.Debug().Msgf("Mochawesome install output %s", string(output))
 
 	specs := strings.Split(c.Specs, ",")
 	wg := sync.WaitGroup{}
