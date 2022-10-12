@@ -214,7 +214,7 @@ func TestReportBack_spec_all(t *testing.T) {
 	defer ts.Close()
 
 	c.ApiURL = ts.URL
-	c.reportBack(fmt.Errorf("Execution failed"), "")
+	c.reportBack(fmt.Errorf("Execution failed"), "", true, "{}", false)
 }
 
 func TestReportBackspec_specific(t *testing.T) {
@@ -233,5 +233,5 @@ func TestReportBackspec_specific(t *testing.T) {
 	defer ts.Close()
 
 	c.ApiURL = ts.URL
-	c.reportBack(fmt.Errorf("Execution failed"), "cypress/integration/examples/actions.spec.js")
+	c.reportBack(fmt.Errorf("Execution failed"), "cypress/integration/examples/actions.spec.js", true, "{}", false)
 }
