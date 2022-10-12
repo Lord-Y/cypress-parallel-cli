@@ -59,7 +59,7 @@ func (c *Cypress) Run() {
 
 	gitdir, err := gc.Clone()
 	if err != nil {
-		c.reportBack(err, "")
+		c.reportBack(err, "", true, "{}", false)
 		log.Fatal().Err(err).Msg("Error occured while cloning git repository")
 		return
 	}
@@ -67,14 +67,14 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("Git temp dir %s", gitdir)
 
 	if ctx.Err() == context.DeadlineExceeded {
-		c.reportBack(ctx.Err(), "")
+		c.reportBack(err, "", true, "{}", false)
 		log.Fatal().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
 		return
 	}
 
 	err = os.Chdir(gitdir)
 	if err != nil {
-		c.reportBack(err, "")
+		c.reportBack(err, "", true, "{}", false)
 		log.Fatal().Err(err).Msg("Error occured while chdir git repository")
 		return
 	}
@@ -82,12 +82,12 @@ func (c *Cypress) Run() {
 	if c.ConfigFile != "" {
 		var info os.FileInfo
 		if info, err = os.Stat(fmt.Sprintf("%s/%s", gitdir, c.ConfigFile)); os.IsNotExist(err) {
-			c.reportBack(err, "")
+			c.reportBack(err, "", true, "{}", false)
 			log.Fatal().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
 		if !info.Mode().IsRegular() {
-			c.reportBack(err, "")
+			c.reportBack(err, "", true, "{}", false)
 			log.Fatal().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
@@ -106,7 +106,7 @@ func (c *Cypress) Run() {
 	)
 
 	if err := execUninstallCmd.Run(); err != nil {
-		c.reportBack(err, "")
+		c.reportBack(err, "", true, "{}", false)
 		log.Fatal().Err(err).Msg("Error occured while forcing uninstall of local cypress package")
 		return
 	}
@@ -119,7 +119,7 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("NPM install output %s", string(output))
 
 	if err != nil {
-		c.reportBack(fmt.Errorf("%s | %s", string(output), err), "")
+		c.reportBack(fmt.Errorf("%s | %s", string(output), err), "", true, "{}", false)
 		log.Fatal().Err(fmt.Errorf("%s | %s", string(output), err)).Msgf("Error occured while installing user packages")
 		return
 	}
@@ -134,7 +134,7 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("Mochawesome install output %s", string(output))
 
 	if err != nil {
-		c.reportBack(fmt.Errorf("%s | %s", string(output), err), "")
+		c.reportBack(fmt.Errorf("%s | %s", string(output), err), "", true, "{}", false)
 		log.Fatal().Err(fmt.Errorf("%s | %s", string(output), err)).Msgf("Error occured while installing mochawesome")
 		return
 	}
@@ -152,7 +152,7 @@ func (c *Cypress) Run() {
 			err := cmd.Run()
 			if err != nil {
 				log.Error().Err(err).Msgf("Fail to execute Xvfb command %s", err.Error())
-				c.reportBack(err, spec)
+				c.reportBack(err, spec, true, "{}", false)
 				return
 			}
 
@@ -198,7 +198,7 @@ func (c *Cypress) Run() {
 				<-ctx.Done()
 				if ctx.Err() == context.DeadlineExceeded {
 					_ = syscall.Kill(-process.Process.Pid, syscall.SIGKILL)
-					c.reportBack(ctx.Err(), spec)
+					c.reportBack(ctx.Err(), spec, true, "{}", false)
 					log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
 					return
 				}
@@ -215,58 +215,54 @@ func (c *Cypress) Run() {
 			of, err := os.Open(result)
 			if err != nil {
 				log.Error().Err(err).Msgf("Fail to open file %s", result)
-				c.reportBack(err, spec)
+				c.reportBack(err, spec, true, "{}", false)
 				return
 			}
 			defer of.Close()
 			fo, err := io.ReadAll(of)
 			if err != nil {
 				log.Error().Err(err).Msgf("Fail to read file %s content", result)
-				c.reportBack(err, spec)
+				c.reportBack(err, spec, true, "{}", false)
 				return
 			}
-			headers := make(map[string]string)
-			headers["Content-Type"] = "application/x-www-form-urlencoded"
+
 			buf := new(bytes.Buffer)
 			if err := json.Compact(buf, fo); err != nil {
 				log.Error().Err(err).Msg("Fail to compact json result")
-				c.reportBack(err, spec)
+				c.reportBack(err, spec, true, "{}", false)
 				return
 			}
 
-			payload := fmt.Sprintf("result=%s", hex.EncodeToString(buf.Bytes()))
-			if execution_failed {
-				payload += "&executionStatus=DONE"
-			} else {
-				payload += "&executionStatus=FAILED"
-			}
-			payload += fmt.Sprintf("&uniqId=%s", c.UniqID)
-			payload += fmt.Sprintf("&branch=%s", c.Branch)
-			payload += fmt.Sprintf("&spec=%s", spec)
-			payload += "&encoded=true"
-
-			_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload, "")
-			if err != nil {
-				log.Error().Err(err).Msg("Fail to report back result")
-			}
+			c.reportBack(err, spec, execution_failed, hex.EncodeToString(buf.Bytes()), true)
 		}(i, spec)
 	}
 	wg.Wait()
 	log.Info().Msg("Program execution successful")
 }
 
-func (c *Cypress) reportBack(err error, spec string) {
+func (c *Cypress) reportBack(err error, spec string, executionFailed bool, result string, encoded bool) {
 	if c.ReportBack {
 		headers := make(map[string]string)
 		headers["Content-Type"] = "application/x-www-form-urlencoded"
 		if spec != "" {
 			payload := url.Values{}
-			payload.Set("result", "{}")
-			payload.Set("executionStatus", "FAILED")
+			payload.Set("result", result)
+			if executionFailed {
+				payload.Set("executionStatus", "DONE")
+			} else {
+				payload.Set("executionStatus", "FAILED")
+			}
 			payload.Set("uniqId", c.UniqID)
 			payload.Set("branch", c.Branch)
 			payload.Set("spec", spec)
-			payload.Set("executionErrorOutput", err.Error())
+			if err != nil {
+				payload.Set("executionErrorOutput", err.Error())
+			} else {
+				payload.Set("executionErrorOutput", "")
+			}
+			if encoded {
+				payload.Set("encoded", "true")
+			}
 
 			_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload.Encode(), "")
 			if err != nil {
@@ -277,12 +273,23 @@ func (c *Cypress) reportBack(err error, spec string) {
 			specs := strings.Split(c.Specs, ",")
 			for _, spec := range specs {
 				payload := url.Values{}
-				payload.Set("result", "{}")
-				payload.Set("executionStatus", "FAILED")
+				payload.Set("result", result)
+				if executionFailed {
+					payload.Set("executionStatus", "DONE")
+				} else {
+					payload.Set("executionStatus", "FAILED")
+				}
 				payload.Set("uniqId", c.UniqID)
 				payload.Set("branch", c.Branch)
 				payload.Set("spec", spec)
-				payload.Set("executionErrorOutput", err.Error())
+				if err != nil {
+					payload.Set("executionErrorOutput", err.Error())
+				} else {
+					payload.Set("executionErrorOutput", "")
+				}
+				if encoded {
+					payload.Set("encoded", "true")
+				}
 
 				_, _, err = httprequests.PerformRequests(headers, "POST", fmt.Sprintf("%s%s", c.ApiURL, apiURI), payload.Encode(), "")
 				if err != nil {
@@ -290,6 +297,18 @@ func (c *Cypress) reportBack(err error, spec string) {
 					return
 				}
 			}
+		}
+	} else {
+		var executionStatus string
+		if executionFailed {
+			executionStatus = "DONE"
+		} else {
+			executionStatus = "FAILED"
+		}
+		if err != nil {
+			log.Info().Msgf("result: %s, executionStatus: %s, uniqId: %s, branch: %s, spec: %s, executionErrorOutput: %s", result, executionStatus, c.UniqID, c.Branch, spec, err.Error())
+		} else {
+			log.Info().Msgf("result: %s, executionStatus: %s, uniqId: %s, branch: %s, spec: %s, executionErrorOutput: %s", result, executionStatus, c.UniqID, c.Branch, spec, "")
 		}
 	}
 }
