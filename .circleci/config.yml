@@ -51,7 +51,7 @@ jobs:
 
     - run:
         name: download mage
-        command: go get -u github.com/magefile/mage
+        command: go install github.com/magefile/mage@latest
 
     - run:
         name: Install golang dependencies
@@ -96,7 +96,7 @@ jobs:
 
     - run:
         name: download mage
-        command: go get -u github.com/magefile/mage
+        command: go install github.com/magefile/mage@latest
 
     - run:
         name: Install golang dependencies
@@ -116,7 +116,7 @@ jobs:
     - run:
         name: Publish prerelease
         command: |
-          go get github.com/tcnksm/ghr
+          go install github.com/tcnksm/ghr@latest
           git checkout .
           ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -b "See changelog [here](https://github.com/Lord-Y/cypress-parallel-cli/blob/main/CHANGELOG.md)" -prerelease ${CIRCLE_TAG} artifacts/
 
@@ -136,7 +136,7 @@ jobs:
 
     - run:
         name: download mage
-        command: go get -u github.com/magefile/mage
+        command: go install github.com/magefile/mage@latest
 
     - run:
         name: Install golang dependencies
@@ -156,7 +156,7 @@ jobs:
     - run:
         name: Publish release
         command: |
-          go get github.com/tcnksm/ghr
+          go install github.com/tcnksm/ghr@latest
           git checkout .
           ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -n ${CIRCLE_TAG} -b "See changelog [here](https://github.com/Lord-Y/cypress-parallel-cli/blob/main/CHANGELOG.md)" ${CIRCLE_TAG} artifacts/
 
