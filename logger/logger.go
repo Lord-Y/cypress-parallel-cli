@@ -35,5 +35,9 @@ func SetLoggerLogLevel() {
 	default:
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
-	log.Logger = zerolog.New(output).With().Timestamp().Logger()
+	if strings.TrimSpace(os.Getenv("CYPRESS_PARALLEL_CLI_LOG_LEVEL_WITH_CALLER")) != "" {
+		log.Logger = zerolog.New(output).With().Timestamp().Caller().Logger()
+	} else {
+		log.Logger = zerolog.New(output).With().Timestamp().Logger()
+	}
 }
