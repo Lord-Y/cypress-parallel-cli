@@ -388,10 +388,21 @@ func (c *Cypress) reportBack(err error, spec string, executionFailed bool, resul
 		} else {
 			executionStatus = "DONE"
 		}
-		if err != nil {
-			log.Info().Msgf("result: %s, executionStatus: %s, uniqId: %s, branch: %s, spec: %s, executionErrorOutput: %s", result, executionStatus, c.UniqID, c.Branch, spec, err.Error())
+		if spec != "" {
+			if err != nil {
+				log.Info().Msgf("result: %s, executionStatus: %s, uniqId: %s, branch: %s, spec: %s, executionErrorOutput: %s", result, executionStatus, c.UniqID, c.Branch, spec, err.Error())
+			} else {
+				log.Info().Msgf("result: %s, executionStatus: %s, uniqId: %s, branch: %s, spec: %s, executionErrorOutput: %s", result, executionStatus, c.UniqID, c.Branch, spec, "")
+			}
 		} else {
-			log.Info().Msgf("result: %s, executionStatus: %s, uniqId: %s, branch: %s, spec: %s, executionErrorOutput: %s", result, executionStatus, c.UniqID, c.Branch, spec, "")
+			specs := strings.Split(c.Specs, ",")
+			for _, spec := range specs {
+				if err != nil {
+					log.Info().Msgf("result: %s, executionStatus: %s, uniqId: %s, branch: %s, spec: %s, executionErrorOutput: %s", result, executionStatus, c.UniqID, c.Branch, spec, err.Error())
+				} else {
+					log.Info().Msgf("result: %s, executionStatus: %s, uniqId: %s, branch: %s, spec: %s, executionErrorOutput: %s", result, executionStatus, c.UniqID, c.Branch, spec, "")
+				}
+			}
 		}
 	}
 }
