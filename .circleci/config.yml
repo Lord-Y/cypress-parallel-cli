@@ -69,6 +69,8 @@ jobs:
         no_output_timeout: 30m
         command: |
           export PATH=~/.npm-global/bin:$PATH
+          export CYPRESS_PARALLEL_CLI_LOG_LEVEL=debug
+          export CYPRESS_PARALLEL_CLI_LOG_LEVEL_WITH_CALLER=true
           go test -v ./... -coverprofile=coverage.out
 
     - run:
