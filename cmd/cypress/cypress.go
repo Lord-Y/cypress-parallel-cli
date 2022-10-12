@@ -140,6 +140,7 @@ func (c *Cypress) Run() {
 		"-D",
 		"cypress",
 	)
+	log.Debug().Msg("Uninstall actual cypress version from user packages")
 
 	if err := execUninstallCmd.Run(); err != nil {
 		c.reportBack(err, "", true, "{}", false)
