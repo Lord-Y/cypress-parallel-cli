@@ -44,7 +44,7 @@ func Cypress(c *cli.Context) (z *cli.Command) {
 				Name:        "branch",
 				Aliases:     []string{"b"},
 				Value:       "",
-				Usage:       "Branch in which specs are hold (required)",
+				Usage:       "Ref (Branch ex: refs/heads/6.0.0 or tag ex: refs/tags/6.0.0) in which specs are hold (required)",
 				Destination: &cmd.Branch,
 			},
 			&cli.StringFlag{
