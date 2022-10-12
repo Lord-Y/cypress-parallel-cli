@@ -20,6 +20,7 @@ import (
 	"github.com/Lord-Y/cypress-parallel-cli/git"
 	"github.com/Lord-Y/cypress-parallel-cli/httprequests"
 	"github.com/Lord-Y/cypress-parallel-cli/logger"
+	"github.com/hashicorp/go-version"
 	"github.com/rs/zerolog/log"
 )
 
@@ -93,6 +94,41 @@ func (c *Cypress) Run() {
 		}
 	}
 
+	c1 := exec.Command("cypress", "--version")
+	c2 := exec.Command("grep", `Cypress package version: `)
+	c2.Stdin, err = c1.StdoutPipe()
+	if err != nil {
+		c.reportBack(err, "", true, "{}", false)
+		log.Fatal().Err(err).Msg("Error occured while getting stdout pipe")
+		return
+	}
+
+	var outputCypressVersion bytes.Buffer
+	c2.Stdout = &outputCypressVersion
+	err = c2.Start()
+	if err != nil {
+		c.reportBack(err, "", true, "{}", false)
+		log.Fatal().Err(err).Msg("Error occured while starting cypress version command")
+		return
+	}
+	err = c1.Run()
+	if err != nil {
+		c.reportBack(err, "", true, "{}", false)
+		log.Fatal().Err(err).Msg("Error occured while running cypress version command")
+		return
+	}
+	err = c2.Wait()
+	if err != nil {
+		c.reportBack(err, "", true, "{}", false)
+		log.Fatal().Err(err).Msg("Error occured while waiting cypress version command")
+		return
+	}
+
+	log.Debug().Msgf("Cypress version output %s", strings.TrimSpace(outputCypressVersion.String()))
+	outputSplit := strings.Split(strings.TrimSpace(outputCypressVersion.String()), " ")
+	cypressVersion := outputSplit[len(outputSplit)-1]
+	log.Debug().Msgf("Cypress version %s", cypressVersion)
+
 	execUninstallCmd := exec.CommandContext(
 		ctx,
 		"npm",
@@ -116,13 +152,13 @@ func (c *Cypress) Run() {
 		"npm",
 		"install",
 	).Output()
-	log.Debug().Msgf("NPM install output %s", string(output))
 
 	if err != nil {
-		c.reportBack(fmt.Errorf("%s | %s", string(output), err), "", true, "{}", false)
-		log.Fatal().Err(fmt.Errorf("%s | %s", string(output), err)).Msgf("Error occured while installing user packages")
+		c.reportBack(err, "", true, "{}", false)
+		log.Fatal().Err(err).Msgf("Error occured while installing user packages")
 		return
 	}
+	log.Debug().Msgf("NPM install output %s", string(output))
 
 	output, err = exec.CommandContext(
 		ctx,
@@ -131,13 +167,13 @@ func (c *Cypress) Run() {
 		"--save-dev",
 		"mochawesome",
 	).Output()
-	log.Debug().Msgf("Mochawesome install output %s", string(output))
 
 	if err != nil {
-		c.reportBack(fmt.Errorf("%s | %s", string(output), err), "", true, "{}", false)
-		log.Fatal().Err(fmt.Errorf("%s | %s", string(output), err)).Msgf("Error occured while installing mochawesome")
+		c.reportBack(err, "", true, "{}", false)
+		log.Fatal().Err(err).Msgf("Error occured while installing mochawesome")
 		return
 	}
+	log.Debug().Msgf("Mochawesome install output %s", string(output))
 
 	specs := strings.Split(c.Specs, ",")
 	wg := sync.WaitGroup{}
@@ -160,34 +196,81 @@ func (c *Cypress) Run() {
 			reportFilename := strings.TrimSuffix(f, ".spec.js")
 			reportFilename = strings.TrimSuffix(reportFilename, ".cy.js")
 
-			args := []string{
-				"run",
-				"--browser",
-				c.Browser,
-				"--headless",
-				"--spec",
-				spec,
-				"--reporter",
-				"mochawesome",
-				"--reporter-options",
-				fmt.Sprintf("reportFilename=%s", reportFilename),
+			v1, err := version.NewVersion(cypressVersion)
+			if err != nil {
+				log.Error().Err(err).Msgf("Error occured while initializing cypress version v1")
+				c.reportBack(err, spec, true, "{}", false)
+				return
+			}
+			v2, err := version.NewVersion("10.0.0")
+			if err != nil {
+				log.Error().Err(err).Msgf("Error occured while initializing cypress version v2")
+				c.reportBack(err, spec, true, "{}", false)
+				return
+			}
+
+			var (
+				args    []string
+				process *exec.Cmd
+			)
+
+			if v1.LessThan(v2) {
+				args = []string{
+					"run",
+					"--browser",
+					c.Browser,
+					"--headless",
+					"--spec",
+					spec,
+					"--reporter",
+					"mochawesome",
+					"--reporter-options",
+					fmt.Sprintf("reportFilename=%s", reportFilename),
+				}
+
+				process = exec.CommandContext(
+					ctx,
+					"cypress",
+					"run",
+					"--browser",
+					c.Browser,
+					"--headless",
+					"--spec",
+					spec,
+					"--reporter",
+					"mochawesome",
+					"--reporter-options",
+					fmt.Sprintf("reportFilename=%s", reportFilename),
+				)
+			} else {
+				args = []string{
+					"run",
+					"--browser",
+					c.Browser,
+					"--spec",
+					spec,
+					"--reporter",
+					"mochawesome",
+					"--reporter-options",
+					fmt.Sprintf("reportFilename=%s", reportFilename),
+				}
+
+				process = exec.CommandContext(
+					ctx,
+					"cypress",
+					"run",
+					"--browser",
+					c.Browser,
+					"--spec",
+					spec,
+					"--reporter",
+					"mochawesome",
+					"--reporter-options",
+					fmt.Sprintf("reportFilename=%s", reportFilename),
+				)
 			}
 			log.Debug().Msgf("Running cypress command %s %s", "cypress", strings.Join(args, " "))
 
-			process := exec.CommandContext(
-				ctx,
-				"cypress",
-				"run",
-				"--browser",
-				c.Browser,
-				"--headless",
-				"--spec",
-				spec,
-				"--reporter",
-				"mochawesome",
-				"--reporter-options",
-				fmt.Sprintf("reportFilename=%s", reportFilename),
-			)
 			process.Env = append(
 				os.Environ(),
 				fmt.Sprintf("DISPLAY=%s", screen),
@@ -210,7 +293,7 @@ func (c *Cypress) Run() {
 				log.Error().Err(err).Msgf("Fail to execute cypress command %s", string(output))
 				execution_failed = true
 			}
-			log.Debug().Msgf("Reporting back result to %s", fmt.Sprintf("%s%s", c.ApiURL, apiURI))
+
 			result := fmt.Sprintf("%s/mochawesome-report/%s.json", gitdir, reportFilename)
 			of, err := os.Open(result)
 			if err != nil {
@@ -248,9 +331,9 @@ func (c *Cypress) reportBack(err error, spec string, executionFailed bool, resul
 			payload := url.Values{}
 			payload.Set("result", result)
 			if executionFailed {
-				payload.Set("executionStatus", "DONE")
-			} else {
 				payload.Set("executionStatus", "FAILED")
+			} else {
+				payload.Set("executionStatus", "DONE")
 			}
 			payload.Set("uniqId", c.UniqID)
 			payload.Set("branch", c.Branch)
@@ -275,9 +358,9 @@ func (c *Cypress) reportBack(err error, spec string, executionFailed bool, resul
 				payload := url.Values{}
 				payload.Set("result", result)
 				if executionFailed {
-					payload.Set("executionStatus", "DONE")
-				} else {
 					payload.Set("executionStatus", "FAILED")
+				} else {
+					payload.Set("executionStatus", "DONE")
 				}
 				payload.Set("uniqId", c.UniqID)
 				payload.Set("branch", c.Branch)
@@ -301,9 +384,9 @@ func (c *Cypress) reportBack(err error, spec string, executionFailed bool, resul
 	} else {
 		var executionStatus string
 		if executionFailed {
-			executionStatus = "DONE"
-		} else {
 			executionStatus = "FAILED"
+		} else {
+			executionStatus = "DONE"
 		}
 		if err != nil {
 			log.Info().Msgf("result: %s, executionStatus: %s, uniqId: %s, branch: %s, spec: %s, executionErrorOutput: %s", result, executionStatus, c.UniqID, c.Branch, spec, err.Error())
