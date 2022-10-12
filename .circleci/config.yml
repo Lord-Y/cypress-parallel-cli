@@ -48,6 +48,7 @@ jobs:
           which cypress &> /dev/null || mkdir -p ~/.npm-global
           which cypress &> /dev/null || npm config set prefix '~/.npm-global'
           which cypress &> /dev/null || npm install -g cypress@${CYPRESS_VERSION} --unsafe-perm
+          cypress --version
 
     - run:
         name: download mage
@@ -66,7 +67,9 @@ jobs:
     - run:
         name: Perform unit testing
         no_output_timeout: 30m
-        command: go test -v ./... -coverprofile=coverage.out
+        command: |
+          export PATH=~/.npm-global/bin:$PATH
+          go test -v ./... -coverprofile=coverage.out
 
     - run:
         name: Print result of unit testing
