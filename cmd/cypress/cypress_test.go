@@ -44,6 +44,7 @@ func TestRun_fail(t *testing.T) {
 func TestRun(t *testing.T) {
 	var c Cypress
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
+	c.Branch = "refs/heads/6.0.0"
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
 	c.Timeout = timeout
@@ -73,6 +74,7 @@ func TestRun_fail_config_file(t *testing.T) {
 		stderr bytes.Buffer
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
+	c.Branch = "refs/heads/6.0.0"
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
 	c.ConfigFile = "cypress_fail.json"
@@ -101,6 +103,7 @@ func TestRun_fail_timeout(t *testing.T) {
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
 	c.Specs = "cypress/integration/examples/actions.spec.js"
+	c.Branch = "refs/heads/6.0.0"
 	c.UniqID = "uid"
 	c.ConfigFile = "cypress_fail.json"
 	c.Timeout = 10
@@ -128,6 +131,7 @@ func TestRun_success(t *testing.T) {
 		stdout bytes.Buffer
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
+	c.Branch = "refs/heads/6.0.0"
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
 	c.Timeout = timeout
@@ -153,6 +157,7 @@ func TestRun_success_reportback(t *testing.T) {
 		c Cypress
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
+	c.Branch = "refs/heads/6.0.0"
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
 	c.ReportBack = true
@@ -177,6 +182,7 @@ func TestRun_fail_reportback(t *testing.T) {
 		stderr bytes.Buffer
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
+	c.Branch = "refs/heads/6.0.0"
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
 	c.ReportBack = true
@@ -203,6 +209,7 @@ func TestReportBack_spec_all(t *testing.T) {
 		c Cypress
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
+	c.Branch = "refs/heads/6.0.0"
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
 	c.ReportBack = true
@@ -222,6 +229,7 @@ func TestReportBackspec_specific(t *testing.T) {
 		c Cypress
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
+	c.Branch = "refs/heads/6.0.0"
 	c.Specs = "cypress/integration/examples/actions.spec.js"
 	c.UniqID = "uid"
 	c.ReportBack = true
