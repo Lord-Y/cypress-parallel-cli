@@ -192,7 +192,7 @@ func (c *Cypress) Run() {
 		"npm",
 		"install",
 	).Output()
-	log.Debug().Msgf("NPM install output %s", string(output))
+	log.Debug().Msgf("NPM user packages install output %s", string(output))
 
 	if err != nil {
 		log.Error().Err(err).Msgf("Error occured while installing user packages")
