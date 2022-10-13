@@ -63,36 +63,36 @@ func (c *Cypress) Run() {
 
 	gitdir, err := gc.Clone()
 	if err != nil {
-		log.Error().Err(err).Msg("Error occured while cloning git repository")
 		c.reportBack(err, "", true, "{}", false)
+		log.Error().Err(err).Msg("Error occured while cloning git repository")
 		return
 	}
 	defer os.RemoveAll(gitdir)
 	log.Debug().Msgf("Git temp dir %s", gitdir)
 
 	if ctx.Err() == context.DeadlineExceeded {
-		log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
 		c.reportBack(err, "", true, "{}", false)
+		log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
 		return
 	}
 
 	err = os.Chdir(gitdir)
 	if err != nil {
-		log.Error().Err(err).Msg("Error occured while chdir git repository")
 		c.reportBack(err, "", true, "{}", false)
+		log.Error().Err(err).Msg("Error occured while chdir git repository")
 		return
 	}
 
 	if c.ConfigFile != "" {
 		var info os.FileInfo
 		if info, err = os.Stat(fmt.Sprintf("%s/%s", gitdir, c.ConfigFile)); os.IsNotExist(err) {
-			log.Error().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			c.reportBack(err, "", true, "{}", false)
+			log.Error().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
 		if !info.Mode().IsRegular() {
-			log.Error().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			c.reportBack(err, "", true, "{}", false)
+			log.Error().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
 	}
@@ -101,8 +101,8 @@ func (c *Cypress) Run() {
 	c2 := exec.Command("grep", `Cypress package version: `)
 	c2.Stdin, err = c1.StdoutPipe()
 	if err != nil {
-		log.Error().Err(err).Msg("Error occured while getting stdout pipe")
 		c.reportBack(err, "", true, "{}", false)
+		log.Error().Err(err).Msg("Error occured while getting stdout pipe")
 		return
 	}
 
@@ -110,20 +110,20 @@ func (c *Cypress) Run() {
 	c2.Stdout = &outputCypressVersion
 	err = c2.Start()
 	if err != nil {
-		log.Error().Err(err).Msg("Error occured while starting cypress version command")
 		c.reportBack(err, "", true, "{}", false)
+		log.Error().Err(err).Msg("Error occured while starting cypress version command")
 		return
 	}
 	err = c1.Run()
 	if err != nil {
-		log.Error().Err(err).Msg("Error occured while running cypress version command")
 		c.reportBack(err, "", true, "{}", false)
+		log.Error().Err(err).Msg("Error occured while running cypress version command")
 		return
 	}
 	err = c2.Wait()
 	if err != nil {
-		log.Error().Err(err).Msg("Error occured while waiting cypress version command")
 		c.reportBack(err, "", true, "{}", false)
+		log.Error().Err(err).Msg("Error occured while waiting cypress version command")
 		return
 	}
 
@@ -134,13 +134,14 @@ func (c *Cypress) Run() {
 
 	packages, err := os.ReadFile(gitdir + "/package.json")
 	if err != nil {
-		log.Error().Err(err).Msg("Error occured while getting package.json file")
 		c.reportBack(err, "", true, "{}", false)
+		log.Error().Err(err).Msg("Error occured while getting package.json file")
 		return
 	}
 
 	err = json.Unmarshal(packages, &zp)
 	if err != nil {
+		c.reportBack(err, "", true, "{}", false)
 		log.Error().Err(err).Msgf("Error occured while unmarshalling package.json")
 		return
 	}
@@ -148,8 +149,8 @@ func (c *Cypress) Run() {
 	if zp["dependencies"] != nil {
 		m, err := tools.ConvertMapStringInterfaceToMapStringString(zp["dependencies"].(map[string]interface{}))
 		if err != nil {
-			log.Error().Err(err).Msgf("Error occured while converting dependencies")
 			c.reportBack(err, "", true, "{}", false)
+			log.Error().Err(err).Msgf("Error occured while converting dependencies")
 			return
 		}
 		for k := range m {
@@ -162,8 +163,8 @@ func (c *Cypress) Run() {
 	if zp["devDependencies"] != nil {
 		m, err := tools.ConvertMapStringInterfaceToMapStringString(zp["devDependencies"].(map[string]interface{}))
 		if err != nil {
-			log.Error().Err(err).Msgf("Error occured while converting devDependencies")
 			c.reportBack(err, "", true, "{}", false)
+			log.Error().Err(err).Msgf("Error occured while converting devDependencies")
 			return
 		}
 		for k := range m {
@@ -182,8 +183,8 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("Uninstall cypress packages: %s", strings.Join(npmPackages, " "))
 
 	if err := execUninstallCmd.Run(); err != nil {
-		log.Error().Err(err).Msg("Error occured while forcing uninstall of local cypress package")
 		c.reportBack(err, "", true, "{}", false)
+		log.Error().Err(err).Msg("Error occured while forcing uninstall of local cypress package")
 		return
 	}
 
@@ -195,8 +196,8 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("NPM user packages install output %s", string(output))
 
 	if err != nil {
-		log.Error().Err(err).Msgf("Error occured while installing user packages")
 		c.reportBack(err, "", true, "{}", false)
+		log.Error().Err(err).Msgf("Error occured while installing user packages")
 		return
 	}
 
@@ -210,8 +211,8 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("Mochawesome install output %s", string(output))
 
 	if err != nil {
-		c.reportBack(err, "", true, "{}", false)
 		log.Error().Err(err).Msgf("Error occured while installing mochawesome")
+		c.reportBack(err, "", true, "{}", false)
 		return
 	}
 
@@ -227,8 +228,8 @@ func (c *Cypress) Run() {
 			log.Debug().Msgf("Execution output of screen command %s", cmd.String())
 			err := cmd.Run()
 			if err != nil {
-				log.Error().Err(err).Msgf("Fail to execute Xvfb command %s", err.Error())
 				c.reportBack(err, spec, true, "{}", false)
+				log.Error().Err(err).Msgf("Fail to execute Xvfb command %s", err.Error())
 				return
 			}
 
@@ -238,14 +239,14 @@ func (c *Cypress) Run() {
 
 			v1, err := version.NewVersion(cypressVersion)
 			if err != nil {
-				log.Error().Err(err).Msgf("Error occured while initializing cypress version v1")
 				c.reportBack(err, spec, true, "{}", false)
+				log.Error().Err(err).Msgf("Error occured while initializing cypress version v1")
 				return
 			}
 			v2, err := version.NewVersion("10.0.0")
 			if err != nil {
-				log.Error().Err(err).Msgf("Error occured while initializing cypress version v2")
 				c.reportBack(err, spec, true, "{}", false)
+				log.Error().Err(err).Msgf("Error occured while initializing cypress version v2")
 				return
 			}
 
@@ -321,8 +322,8 @@ func (c *Cypress) Run() {
 				<-ctx.Done()
 				if ctx.Err() == context.DeadlineExceeded {
 					_ = syscall.Kill(-process.Process.Pid, syscall.SIGKILL)
-					log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
 					c.reportBack(ctx.Err(), spec, true, "{}", false)
+					log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
 					return
 				}
 			}()
@@ -337,22 +338,22 @@ func (c *Cypress) Run() {
 			result := fmt.Sprintf("%s/mochawesome-report/%s.json", gitdir, reportFilename)
 			of, err := os.Open(result)
 			if err != nil {
-				log.Error().Err(err).Msgf("Fail to open file %s", result)
 				c.reportBack(err, spec, true, "{}", false)
+				log.Error().Err(err).Msgf("Fail to open file %s", result)
 				return
 			}
 			defer of.Close()
 			fo, err := io.ReadAll(of)
 			if err != nil {
-				log.Error().Err(err).Msgf("Fail to read file %s content", result)
 				c.reportBack(err, spec, true, "{}", false)
+				log.Error().Err(err).Msgf("Fail to read file %s content", result)
 				return
 			}
 
 			buf := new(bytes.Buffer)
 			if err := json.Compact(buf, fo); err != nil {
-				log.Error().Err(err).Msg("Fail to compact json result")
 				c.reportBack(err, spec, true, "{}", false)
+				log.Error().Err(err).Msg("Fail to compact json result")
 				return
 			}
 

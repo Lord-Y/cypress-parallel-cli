@@ -16,10 +16,11 @@ import (
 )
 
 var (
-	timeout = 10
+	timeout = 5
 )
 
-func TestRun_fail(t *testing.T) {
+func TestRun1(t *testing.T) {
+	assert := assert.New(t)
 	var c Cypress
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
 	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
@@ -38,10 +39,33 @@ func TestRun_fail(t *testing.T) {
 	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
 		return
 	}
-	t.Fatalf("process ran with err %s, want exit status 1", err.Error())
+	assert.NoError(err)
 }
 
-func TestRun(t *testing.T) {
+func TestRun_fakerepository(t *testing.T) {
+	assert := assert.New(t)
+	var c Cypress
+	c.Repository = "https://fakegithub.com/cypress-io/cypress-example-kitchensink.git"
+	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
+	c.UniqID = "uid"
+	c.Branch = "test"
+	c.Username = "test"
+	c.Timeout = timeout
+
+	if os.Getenv("FATAL") == "1" {
+		c.Run()
+		return
+	}
+	cmd := exec.Command(os.Args[0], "-test.run=TestRun_fail")
+	cmd.Env = append(os.Environ(), "FATAL=1")
+	err := cmd.Run()
+	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
+		return
+	}
+	assert.NoError(err)
+}
+
+func TestRun_ok(t *testing.T) {
 	var c Cypress
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
 	c.Branch = "refs/tags/v1.15.3"
@@ -68,6 +92,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestRun_fail_config_file(t *testing.T) {
+	assert := assert.New(t)
 	var (
 		c      Cypress
 		stdout bytes.Buffer
@@ -92,10 +117,11 @@ func TestRun_fail_config_file(t *testing.T) {
 	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
 		return
 	}
-	t.Fatalf("process ran with err %s, want exit status 1", err.Error())
+	assert.NoError(err)
 }
 
 func TestRun_fail_timeout(t *testing.T) {
+	assert := assert.New(t)
 	var (
 		c      Cypress
 		stdout bytes.Buffer
@@ -105,8 +131,8 @@ func TestRun_fail_timeout(t *testing.T) {
 	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
 	c.Branch = "refs/tags/v1.15.3"
 	c.UniqID = "uid"
-	c.ConfigFile = "cypress_fail.json"
-	c.Timeout = 10
+	c.ConfigFile = "cypress.json"
+	c.Timeout = 1
 
 	if os.Getenv("FATAL") == "1" {
 		c.Run()
@@ -120,7 +146,7 @@ func TestRun_fail_timeout(t *testing.T) {
 	if e, ok := err.(*exec.ExitError); ok && !e.Success() {
 		return
 	}
-	t.Fatalf("process ran with err %s, want exit status 1", err.Error())
+	assert.NoError(err)
 }
 
 func TestRun_success(t *testing.T) {
