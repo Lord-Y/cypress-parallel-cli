@@ -20,6 +20,7 @@ import (
 	"github.com/Lord-Y/cypress-parallel-cli/git"
 	"github.com/Lord-Y/cypress-parallel-cli/httprequests"
 	"github.com/Lord-Y/cypress-parallel-cli/logger"
+	"github.com/Lord-Y/golang-tools/tools"
 	"github.com/hashicorp/go-version"
 	"github.com/rs/zerolog/log"
 )
@@ -48,7 +49,9 @@ func init() {
 // Run will run cypress command
 func (c *Cypress) Run() {
 	var (
-		gc git.Repository
+		gc          git.Repository
+		zp          map[string]interface{}
+		npmPackages []string
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(c.Timeout)*time.Minute)
 	defer cancel()
@@ -60,36 +63,36 @@ func (c *Cypress) Run() {
 
 	gitdir, err := gc.Clone()
 	if err != nil {
+		log.Error().Err(err).Msg("Error occured while cloning git repository")
 		c.reportBack(err, "", true, "{}", false)
-		log.Fatal().Err(err).Msg("Error occured while cloning git repository")
 		return
 	}
 	defer os.RemoveAll(gitdir)
 	log.Debug().Msgf("Git temp dir %s", gitdir)
 
 	if ctx.Err() == context.DeadlineExceeded {
+		log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
 		c.reportBack(err, "", true, "{}", false)
-		log.Fatal().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
 		return
 	}
 
 	err = os.Chdir(gitdir)
 	if err != nil {
+		log.Error().Err(err).Msg("Error occured while chdir git repository")
 		c.reportBack(err, "", true, "{}", false)
-		log.Fatal().Err(err).Msg("Error occured while chdir git repository")
 		return
 	}
 
 	if c.ConfigFile != "" {
 		var info os.FileInfo
 		if info, err = os.Stat(fmt.Sprintf("%s/%s", gitdir, c.ConfigFile)); os.IsNotExist(err) {
+			log.Error().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			c.reportBack(err, "", true, "{}", false)
-			log.Fatal().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
 		if !info.Mode().IsRegular() {
+			log.Error().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			c.reportBack(err, "", true, "{}", false)
-			log.Fatal().Err(err).Msgf("Error occured while checking config file %s", c.ConfigFile)
 			return
 		}
 	}
@@ -98,8 +101,8 @@ func (c *Cypress) Run() {
 	c2 := exec.Command("grep", `Cypress package version: `)
 	c2.Stdin, err = c1.StdoutPipe()
 	if err != nil {
+		log.Error().Err(err).Msg("Error occured while getting stdout pipe")
 		c.reportBack(err, "", true, "{}", false)
-		log.Fatal().Err(err).Msg("Error occured while getting stdout pipe")
 		return
 	}
 
@@ -107,20 +110,20 @@ func (c *Cypress) Run() {
 	c2.Stdout = &outputCypressVersion
 	err = c2.Start()
 	if err != nil {
+		log.Error().Err(err).Msg("Error occured while starting cypress version command")
 		c.reportBack(err, "", true, "{}", false)
-		log.Fatal().Err(err).Msg("Error occured while starting cypress version command")
 		return
 	}
 	err = c1.Run()
 	if err != nil {
+		log.Error().Err(err).Msg("Error occured while running cypress version command")
 		c.reportBack(err, "", true, "{}", false)
-		log.Fatal().Err(err).Msg("Error occured while running cypress version command")
 		return
 	}
 	err = c2.Wait()
 	if err != nil {
+		log.Error().Err(err).Msg("Error occured while waiting cypress version command")
 		c.reportBack(err, "", true, "{}", false)
-		log.Fatal().Err(err).Msg("Error occured while waiting cypress version command")
 		return
 	}
 
@@ -129,22 +132,58 @@ func (c *Cypress) Run() {
 	cypressVersion := outputSplit[len(outputSplit)-1]
 	log.Debug().Msgf("Cypress version %s", cypressVersion)
 
+	packages, err := os.ReadFile(gitdir + "/package.json")
+	if err != nil {
+		log.Error().Err(err).Msg("Error occured while getting package.json file")
+		c.reportBack(err, "", true, "{}", false)
+		return
+	}
+
+	err = json.Unmarshal(packages, &zp)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error occured while unmarshalling package.json")
+		return
+	}
+
+	if zp["dependencies"] != nil {
+		m, err := tools.ConvertMapStringInterfaceToMapStringString(zp["dependencies"].(map[string]interface{}))
+		if err != nil {
+			log.Error().Err(err).Msgf("Error occured while converting dependencies")
+			c.reportBack(err, "", true, "{}", false)
+			return
+		}
+		for k := range m {
+			if strings.Contains(k, "cypress") {
+				npmPackages = append(npmPackages, k)
+			}
+		}
+	}
+
+	if zp["devDependencies"] != nil {
+		m, err := tools.ConvertMapStringInterfaceToMapStringString(zp["devDependencies"].(map[string]interface{}))
+		if err != nil {
+			log.Error().Err(err).Msgf("Error occured while converting devDependencies")
+			c.reportBack(err, "", true, "{}", false)
+			return
+		}
+		for k := range m {
+			if strings.Contains(k, "cypress") {
+				npmPackages = append(npmPackages, k)
+			}
+		}
+	}
+
 	execUninstallCmd := exec.CommandContext(
 		ctx,
 		"npm",
 		"uninstall",
-		"cypress",
-		"&&",
-		"npm",
-		"uninstall",
-		"-D",
-		"cypress",
+		strings.Join(npmPackages, " "),
 	)
-	log.Debug().Msg("Uninstall actual cypress version from user packages")
+	log.Debug().Msgf("Uninstall cypress packages: %s", strings.Join(npmPackages, " "))
 
 	if err := execUninstallCmd.Run(); err != nil {
+		log.Error().Err(err).Msg("Error occured while forcing uninstall of local cypress package")
 		c.reportBack(err, "", true, "{}", false)
-		log.Fatal().Err(err).Msg("Error occured while forcing uninstall of local cypress package")
 		return
 	}
 
@@ -156,8 +195,8 @@ func (c *Cypress) Run() {
 	log.Debug().Msgf("NPM install output %s", string(output))
 
 	if err != nil {
+		log.Error().Err(err).Msgf("Error occured while installing user packages")
 		c.reportBack(err, "", true, "{}", false)
-		log.Fatal().Err(err).Msgf("Error occured while installing user packages")
 		return
 	}
 
@@ -172,7 +211,7 @@ func (c *Cypress) Run() {
 
 	if err != nil {
 		c.reportBack(err, "", true, "{}", false)
-		log.Fatal().Err(err).Msgf("Error occured while installing mochawesome")
+		log.Error().Err(err).Msgf("Error occured while installing mochawesome")
 		return
 	}
 
@@ -282,8 +321,8 @@ func (c *Cypress) Run() {
 				<-ctx.Done()
 				if ctx.Err() == context.DeadlineExceeded {
 					_ = syscall.Kill(-process.Process.Pid, syscall.SIGKILL)
-					c.reportBack(ctx.Err(), spec, true, "{}", false)
 					log.Error().Err(ctx.Err()).Msgf("Execution timeout reached after %d minute(s)", c.Timeout)
+					c.reportBack(ctx.Err(), spec, true, "{}", false)
 					return
 				}
 			}()
