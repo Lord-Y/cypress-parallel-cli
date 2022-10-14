@@ -23,7 +23,7 @@ func TestRun1(t *testing.T) {
 	assert := assert.New(t)
 	var c Cypress
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
-	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
+	c.Specs = "cypress/e2e/2-advanced-examples/connectors.cy.js"
 	c.UniqID = "uid"
 	c.Branch = "test"
 	c.Username = "test"
@@ -46,7 +46,7 @@ func TestRun_fakerepository(t *testing.T) {
 	assert := assert.New(t)
 	var c Cypress
 	c.Repository = "https://fakegithub.com/cypress-io/cypress-example-kitchensink.git"
-	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
+	c.Specs = "cypress/e2e/2-advanced-examples/connectors.cy.js"
 	c.UniqID = "uid"
 	c.Branch = "test"
 	c.Username = "test"
@@ -68,8 +68,8 @@ func TestRun_fakerepository(t *testing.T) {
 func TestRun_ok(t *testing.T) {
 	var c Cypress
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
-	c.Branch = "refs/tags/v1.15.3"
-	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
+	c.Branch = "master"
+	c.Specs = "cypress/e2e/2-advanced-examples/connectors.cy.js"
 	c.UniqID = "uid"
 	c.Timeout = timeout
 
@@ -99,8 +99,8 @@ func TestRun_fail_config_file(t *testing.T) {
 		stderr bytes.Buffer
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
-	c.Branch = "refs/tags/v1.15.3"
-	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
+	c.Branch = "master"
+	c.Specs = "cypress/e2e/2-advanced-examples/connectors.cy.js"
 	c.UniqID = "uid"
 	c.ConfigFile = "cypress_fail.json"
 	c.Timeout = timeout
@@ -128,10 +128,10 @@ func TestRun_fail_timeout(t *testing.T) {
 		stderr bytes.Buffer
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
-	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
-	c.Branch = "refs/tags/v1.15.3"
+	c.Specs = "cypress/e2e/2-advanced-examples/connectors.cy.js"
+	c.Branch = "master"
 	c.UniqID = "uid"
-	c.ConfigFile = "cypress.json"
+	c.ConfigFile = "cypress.config.js"
 	c.Timeout = 1
 
 	if os.Getenv("FATAL") == "1" {
@@ -157,8 +157,8 @@ func TestRun_success(t *testing.T) {
 		stdout bytes.Buffer
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
-	c.Branch = "refs/tags/v1.15.3"
-	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
+	c.Branch = "master"
+	c.Specs = "cypress/e2e/2-advanced-examples/connectors.cy.js"
 	c.UniqID = "uid"
 	c.Timeout = timeout
 
@@ -183,8 +183,8 @@ func TestRun_success_reportback(t *testing.T) {
 		c Cypress
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
-	c.Branch = "refs/tags/v1.15.3"
-	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
+	c.Branch = "master"
+	c.Specs = "cypress/e2e/2-advanced-examples/connectors.cy.js"
 	c.UniqID = "uid"
 	c.ReportBack = true
 	c.ApiURL = ts.URL
@@ -208,8 +208,8 @@ func TestRun_fail_reportback(t *testing.T) {
 		stderr bytes.Buffer
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
-	c.Branch = "refs/tags/v1.15.3"
-	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
+	c.Branch = "master"
+	c.Specs = "cypress/e2e/2-advanced-examples/connectors.cy.js"
 	c.UniqID = "uid"
 	c.ReportBack = true
 	c.ApiURL = ts.URL
@@ -235,8 +235,8 @@ func TestReportBack_spec_all(t *testing.T) {
 		c Cypress
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
-	c.Branch = "refs/tags/v1.15.3"
-	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
+	c.Branch = "master"
+	c.Specs = "cypress/e2e/2-advanced-examples/connectors.cy.js"
 	c.UniqID = "uid"
 	c.ReportBack = true
 	c.Timeout = timeout
@@ -255,8 +255,8 @@ func TestReportBackspec_specific(t *testing.T) {
 		c Cypress
 	)
 	c.Repository = "https://github.com/cypress-io/cypress-example-kitchensink.git"
-	c.Branch = "refs/tags/v1.15.3"
-	c.Specs = "cypress/integration/2-advanced-examples/connectors.spec.js"
+	c.Branch = "master"
+	c.Specs = "cypress/e2e/2-advanced-examples/connectors.cy.js"
 	c.UniqID = "uid"
 	c.ReportBack = true
 	c.Timeout = timeout
@@ -267,5 +267,5 @@ func TestReportBackspec_specific(t *testing.T) {
 	defer ts.Close()
 
 	c.ApiURL = ts.URL
-	c.reportBack(fmt.Errorf("Execution failed"), "cypress/integration/2-advanced-examples/connectors.spec.js", true, "{}", false)
+	c.reportBack(fmt.Errorf("Execution failed"), "cypress/e2e/2-advanced-examples/connectors.cy.js", true, "{}", false)
 }

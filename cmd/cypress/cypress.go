@@ -37,7 +37,7 @@ type Cypress struct {
 	Specs      string // Comma separated list of specs
 	UniqID     string // Uniq ID to run cypress command
 	Browser    string // Default browser to use to run unit testing
-	ConfigFile string // Relative path of cypress config if not cypress.json
+	ConfigFile string // Relative path of cypress config if not cypress.config.js
 	ReportBack bool   // Notify api with cypress results
 	Timeout    int    // Timeout after which the program will exit with error
 }
