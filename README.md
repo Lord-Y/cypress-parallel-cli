@@ -9,7 +9,7 @@ At the execution of each spec, it will send back the result to the API.
 To debug your code directly in the docker container, do this:
 
 ```bash
-sudo docker run --rm --entrypoint="" -v $PWD:/tmp/cypress-parallel-cli -exec -ti ghcr.io/lord-y/cypress-parallel-docker-images/cypress-parallel-docker-images:9.7.0-0.1.1 bash
+sudo docker run --rm --entrypoint="" -v $PWD:/tmp/cypress-parallel-cli -exec -ti ghcr.io/lord-y/cypress-parallel-docker-images/cypress-parallel-docker-images:10.10.0-2.0 bash
 # install golang
 cd /tmp/cypress-parallel-cli
 scripts/golang.sh 1.19.2
@@ -17,7 +17,7 @@ source ~/.bashrc
 # exemple of command
 export CYPRESS_PARALLEL_CLI_LOG_LEVEL=debug
 export CYPRESS_PARALLEL_CLI_LOG_LEVEL_WITH_CALLER=true
-go run main.go cypress --repository https://github.com/cypress-io/cypress-example-kitchensink.git --branch refs/tags/v1.15.3 --specs cypress/integration/2-advanced-examples/connectors.spec.js --uid uuid --report-back
+go run main.go cypress --repository https://github.com/cypress-io/cypress-example-kitchensink.git --branch master --specs cypress/e2e/2-advanced-examples/connectors.cy.js --uid uuid --report-back
 ```
 
 ## Git hooks

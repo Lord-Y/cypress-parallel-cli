@@ -12,7 +12,7 @@ jobs:
   build:
     executor: golang
     environment:
-      CYPRESS_VERSION: 9.7.0
+      CYPRESS_VERSION: 10.10.0
       CHROME_VERSION: 100.0.4896.88
       FIREFOX_VERSION: 99.0.1
       DBUS_SESSION_BUS_ADDRESS: /dev/null

@@ -44,7 +44,7 @@ func Cypress(c *cli.Context) (z *cli.Command) {
 				Name:        "branch",
 				Aliases:     []string{"b"},
 				Value:       "",
-				Usage:       "Ref (Branch ex: refs/tags/v1.15.3 or tag ex: refs/tags/6.0.0) in which specs are hold (required)",
+				Usage:       "Ref (Branch ex: master or tag ex: refs/tags/6.0.0) in which specs are hold (required)",
 				Destination: &cmd.Branch,
 			},
 			&cli.StringFlag{
@@ -71,8 +71,8 @@ func Cypress(c *cli.Context) (z *cli.Command) {
 			&cli.StringFlag{
 				Name:        "config-file",
 				Aliases:     []string{"cf"},
-				Value:       "cypress.json",
-				Usage:       "Relative path of cypress config if not cypress.json",
+				Value:       "cypress.config.js",
+				Usage:       "Relative path of cypress config if not cypress.config.js",
 				Destination: &cmd.ConfigFile,
 			},
 			&cli.BoolFlag{
