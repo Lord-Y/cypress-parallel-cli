@@ -55,6 +55,7 @@ func (c *Repository) Clone() (z string, err error) {
 					Password: c.Password,
 				},
 				ReferenceName: plumbing.ReferenceName(targetRef),
+				SingleBranch:  true,
 				Depth:         1,
 			})
 			if err != nil {
@@ -87,12 +88,16 @@ func (c *Repository) Clone() (z string, err error) {
 					Username: c.Username,
 					Password: c.Password,
 				},
-				Depth: 1,
+				ReferenceName: plumbing.ReferenceName(targetRef),
+				SingleBranch:  true,
+				Depth:         1,
 			})
 		} else {
 			_, err = git.PlainClone(z, false, &git.CloneOptions{
-				URL:   c.Repository,
-				Depth: 1,
+				URL:           c.Repository,
+				ReferenceName: plumbing.ReferenceName(targetRef),
+				SingleBranch:  true,
+				Depth:         1,
 			})
 		}
 		if err != nil {
