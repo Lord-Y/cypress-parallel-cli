@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.2.0](https://github.com/Lord-Y/cypress-parallel-cli/releases/tag/v0.2.0) - 2022-10-14
+
+### Changed
+- Replace deprecated func io/ioutil by io
+- Upgrade to golang 1.19
+- Fix git clone issues
+- Enforce mochawesome reportFilename
+- Improve report back to api
+- Add CYPRESS_PARALLEL_CLI_LOG_LEVEL_WITH_CALLER option for logger
+- Remove headless option when cypress version >= 10.0.0
+- Update doc
+- Uninstall all npm packages matching cypress
+
+## [v0.1.1](https://github.com/Lord-Y/cypress-parallel-cli/releases/tag/v0.1.0) - 2021-12-29
+
+### Changed
+- Update documentation
+
 ## [v0.1.0](https://github.com/Lord-Y/cypress-parallel-cli/releases/tag/v0.1.0) - 2021-12-20
 
 ### Changed
